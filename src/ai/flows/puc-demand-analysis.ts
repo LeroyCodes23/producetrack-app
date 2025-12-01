@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const PucDemandAnalysisInputSchema = z.object({
+const PucDemandAnalysisInputSchema = z.object({
     pucCode: z.string().describe('The code of the PUC to analyze.'),
     variety: z.string().describe('The variety of the produce from the PUC.'),
     commodity: z.string().describe('The commodity type of the produce.'),
@@ -18,7 +18,7 @@ export const PucDemandAnalysisInputSchema = z.object({
 });
 export type PucDemandAnalysisInput = z.infer<typeof PucDemandAnalysisInputSchema>;
 
-export const PucDemandAnalysisOutputSchema = z.object({
+const PucDemandAnalysisOutputSchema = z.object({
     summary: z.string().describe('A brief summary of the demand analysis.'),
     qualityRating: z.object({
         rating: z.number().min(1).max(5).describe('A 1-5 star rating of the PUC quality, can be a float.'),
