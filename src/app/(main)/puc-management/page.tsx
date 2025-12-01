@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -29,6 +29,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function PucManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [pucDataWithStatus, setPucDataWithStatus] = useState<any[]>([]);
 
   const pucData = useMemo(() => {
     return pucs.map(puc => {
@@ -36,10 +37,17 @@ export default function PucManagementPage() {
       return {
         ...puc,
         location: producer?.location || 'N/A',
-        status: ['Active', 'Inactive', 'Pending'][Math.floor(Math.random() * 3)] as 'Active' | 'Inactive' | 'Pending'
       }
     });
   }, []);
+
+  useEffect(() => {
+    const dataWithStatus = pucData.map(puc => ({
+      ...puc,
+      status: ['Active', 'Inactive', 'Pending'][Math.floor(Math.random() * 3)] as 'Active' | 'Inactive' | 'Pending'
+    }));
+    setPucDataWithStatus(dataWithStatus);
+  }, [pucData]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -56,13 +64,13 @@ export default function PucManagementPage() {
 
   const filteredPucs = useMemo(() => {
     if (!searchTerm) {
-      return pucData;
+      return pucDataWithStatus;
     }
-    return pucData.filter(puc => 
+    return pucDataWithStatus.filter(puc =>
       puc.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       puc.producer.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [pucData, searchTerm]);
+  }, [pucDataWithStatus, searchTerm]);
 
 
   return (
@@ -82,9 +90,9 @@ export default function PucManagementPage() {
           <div className="flex justify-between items-center">
             <div className="relative w-full max-w-sm">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                    type="search" 
-                    placeholder="Search by PUC or Producer..." 
+                <Input
+                    type="search"
+                    placeholder="Search by PUC or Producer..."
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
