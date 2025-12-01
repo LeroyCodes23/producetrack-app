@@ -17,9 +17,10 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Search } from "lucide-react";
-import { pucs, producers, commodities } from "@/lib/data";
+import { commodities } from "@/lib/data";
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import sensusData from '@/lib/data/SensusData.json';
 
 interface SensusData {
     producer_id: string;
@@ -46,32 +47,38 @@ const findCommodityForVariety = (varietyName: string): string => {
     return 'Unknown';
 }
 
-const generateMockSensusData = (): SensusData[] => {
-    return pucs.map((puc, index) => {
-        const producer = producers.find(p => p.id === puc.producer || p.name === puc.producer);
-        const hectarage = Math.random() * 5 + 1;
-        return {
-            producer_id: producer?.id || 'N/A',
-            producer_name: puc.producer,
-            comm: findCommodityForVariety(puc.variety),
-            variety: puc.variety,
-            orchard: `Orchard ${(index % 5) + 1}`,
-            puc: puc.code,
-            big_status: ['Big', 'Small'][Math.floor(Math.random() * 2)],
-            plant_year: (2010 + Math.floor(Math.random() * 13)).toString(),
-            onderstam: ['Carrizo', 'X639', 'Troyer'][Math.floor(Math.random() * 3)],
-            tree_width: parseFloat((Math.random() * 2 + 2).toFixed(2)),
-            row_width: parseFloat((Math.random() * 2 + 4).toFixed(2)),
-            tree_count: Math.floor(hectarage * (10000 / ((Math.random() * 2 + 2) * (Math.random() * 2 + 4)))),
-            sum_of_hectares: parseFloat(hectarage.toFixed(2)),
-        };
+const processSensusData = (): SensusData[] => {
+    const data: SensusData[] = [];
+    sensusData.forEach((producer: any) => {
+        producer.farms.forEach((farm: any) => {
+            farm.rows.forEach((row: any) => {
+                if (!row.summaryLabel) {
+                    data.push({
+                        producer_id: producer.producerCode,
+                        producer_name: producer.producerName,
+                        comm: row.Comm || findCommodityForVariety(row.Variety),
+                        variety: row.Variety,
+                        orchard: row.Orchard,
+                        puc: row.PUC || 'N/A',
+                        big_status: row.BigStatus,
+                        plant_year: row.PlantYear ? row.PlantYear.toString() : 'N/A',
+                        onderstam: row.Onderstam,
+                        tree_width: row.TreeWidth,
+                        row_width: row.RowWidth,
+                        tree_count: row.TreeCount,
+                        sum_of_hectares: row.SumOfHectares,
+                    });
+                }
+            });
+        });
     });
+    return data;
 };
 
 export default function SensusTable() {
   const [searchTerm, setSearchTerm] = useState('');
   
-  const allSensusData = useMemo(() => generateMockSensusData(), []);
+  const allSensusData = useMemo(() => processSensusData(), []);
 
   const filteredData = useMemo(() => {
     if (!searchTerm) {

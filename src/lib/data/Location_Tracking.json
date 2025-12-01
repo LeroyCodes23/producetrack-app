@@ -1,0 +1,89 @@
+{
+  "table_name": "Location_Tracking",
+  "data": [
+    {
+      "Location_Group": "Coldstore",
+      "Location": "CFC",
+      "Group_Sort": 2,
+      "Location_Sort": 4
+    },
+    {
+      "Location_Group": "Coldstore",
+      "Location": "CFC File",
+      "Group_Sort": 2,
+      "Location_Sort": 5
+    },
+    {
+      "Location_Group": "Coldstore",
+      "Location": "CFCRICH",
+      "Group_Sort": 2,
+      "Location_Sort": 6
+    },
+    {
+      "Location_Group": "Coldstore",
+      "Location": "CFCRICH File",
+      "Group_Sort": 2,
+      "Location_Sort": 7
+    },
+    {
+      "Location_Group": "Sold",
+      "Location": "CONFIRM",
+      "Group_Sort": 4,
+      "Location_Sort": 12
+    },
+    {
+      "Location_Group": "Port",
+      "Location": "CONTAIN",
+      "Group_Sort": 3,
+      "Location_Sort": 11
+    },
+    {
+      "Location_Group": "GHS",
+      "Location": "GOEDEHP",
+      "Group_Sort": 1,
+      "Location_Sort": 3
+    },
+    {
+      "Location_Group": "Port",
+      "Location": "IHS",
+      "Group_Sort": 3,
+      "Location_Sort": 12
+    },
+    {
+      "Location_Group": "GHS",
+      "Location": "Indet",
+      "Group_Sort": 1,
+      "Location_Sort": 1
+    },
+    {
+      "Location_Group": "GHS",
+      "Location": "Outdet",
+      "Group_Sort": 1,
+      "Location_Sort": 2
+    },
+    {
+      "Location_Group": "Coldstore",
+      "Location": "SAFTATL",
+      "Group_Sort": 2,
+      "Location_Sort": 8
+    },
+    {
+      "Location_Group": "Coldstore",
+      "Location": "SAFTCH",
+      "Group_Sort": 2,
+      "Location_Sort": 9
+    },
+    {
+      "Location_Group": "Coldstore",
+      "Location": "SAFTKLN",
+      "Group_Sort": 2,
+      "Location_Sort": 10
+    },
+    {
+      "Location_Group": "Transit",
+      "Location": "TRANSIT",
+      "Group_Sort": 5,
+      "Location_Sort": 14
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+[
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": 1,
+    "Description": "Grade 1"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1A",
+    "Description": "Capespan Cl. 1 Exp"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1AC",
+    "Description": "1AC"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1B",
+    "Description": "Capespan Cl. 1 Export"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1E",
+    "Description": "1E"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1F",
+    "Description": "Export Far East"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1J",
+    "Description": "Japan"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1K",
+    "Description": "Korea"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1M",
+    "Description": "Export MDE"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "1U",
+    "Description": "1U USA"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": 2,
+    "Description": "Grade 2"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "2A",
+    "Description": "Capespan CI.2 Export"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "2B",
+    "Description": "2B -  Russia"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "2E",
+    "Description": "Export B-Destinations"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "2M",
+    "Description": "2M  MDE"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": 3,
+    "Description": "Grade 3 - Industrial Export"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "3M",
+    "Description": "3M MDE"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "C1",
+    "Description": "Grade 1,5"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "CH",
+    "Description": "Choice"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "CL1",
+    "Description": "C1 Local"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "CL2",
+    "Description": "C2 Local"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "CL3",
+    "Description": "C3 Local"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "G1",
+    "Description": "G1"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G2",
+    "Description": "Graad 2"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G3",
+    "Description": "Graad 3"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G4",
+    "Description": "Graad 4"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G5",
+    "Description": "Graad 5"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G6",
+    "Description": "Graad 6"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G7",
+    "Description": "Graad 7"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "G8",
+    "Description": "Graad 8"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "GEN 2",
+    "Description": "Generasie 2"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "GEN 3",
+    "Description": "Generasie 3"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "GEN 4",
+    "Description": "Generasie 4"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "GEN 5",
+    "Description": "Generasie 5"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "GEN 6",
+    "Description": "Generasie 6"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "HTIP",
+    "Description": "Hertip"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "OD",
+    "Description": "Odda"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "OG",
+    "Description": "Orchard Grade"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "PPECB",
+    "Description": "PPECB Samples"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "R1",
+    "Description": "Rebin Class 1"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "R1+R2",
+    "Description": "Pre-Size Bins"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "R2",
+    "Description": "Rebin Class 2"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "R3",
+    "Description": "Rebin Class 3"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "R4",
+    "Description": "Rebin Juice"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "R5",
+    "Description": "Rebin Waste"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "RGR",
+    "Description": "Rebin Green"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "RSA1",
+    "Description": "RSA Cl 1"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "RSA2",
+    "Description": "RSA  C2 1"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "SB",
+    "Description": "Sample Bin"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "SJ",
+    "Description": "SJ - Japan"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "SL",
+    "Description": "Selected"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "ST",
+    "Description": "Star"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "SU",
+    "Description": "ST UK"
+  },
+  {
+    "GradeGroup": "LOC",
+    "GradeCode": "P",
+    "Description": "Grade 3"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "EU1",
+    "Description": "Class 1"
+  },
+  {
+    "GradeGroup": "EXP",
+    "GradeCode": "EU2",
+    "Description": "Class 2"
+  }
+]

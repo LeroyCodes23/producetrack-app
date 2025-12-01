@@ -1,122 +1,89 @@
-import type { Inspection, Harvest, PUC, PalletJourney, JourneyBin, Producer, PackhouseBatch } from './types';
+import type { Producer, PUC, Inspection, Harvest, PackhouseBatch, Accreditation, Grade, JourneyBin, LocationTracking, PalletJourney } from '@/lib/types';
+import producerInfo from './data/ProducerInfoJson.json';
+import accreditationsData from './data/Accreditations.json';
+import pucToVariety from './data/PUC2VarietyJ.json';
+import fruitVarieties from './data/FruitVariety.json';
+import gradesData from './data/Grading table.json';
+import journeyBinData from './data/JourneyBin.json';
+import locationTrackingData from './data/Location_Tracking.json';
+import palletJourneyData from './data/Pallet_Journey.json';
 
-export const pucs: PUC[] = [
-  { id: '1', code: 'NL1163', producer: 'Naranja Packers', variety: 'Valencia' },
-  { id: '2', code: 'NL0205', producer: 'Oranjezicht', variety: 'Navel' },
-  { id: '3', code: 'NL0109', producer: 'Citrus Growers', variety: 'Lemon' },
-  { id: '4', code: 'Y1502', producer: 'Yield Farms', variety: 'Grapefruit' },
-  { id: '5', code: 'NL1163', producer: 'Naranja Packers', variety: 'Mandarin' },
-  { id: '6', code: 'NL0205', producer: 'Oranjezicht', variety: 'Cara Cara' },
-  { id: '7', code: 'SF-001', producer: 'Sun Farming', variety: 'Navel' },
-  { id: '8', code: 'CGE-001', producer: 'Citrus Grove Estates', variety: 'Valencia' },
-  { id: '9', 'code': 'GVO-001', 'producer': 'Green Valley Orchards', 'variety': 'Lemon' },
-  { id: '10', 'code': 'AO-001', 'producer': 'Apex Orchards', 'variety': 'Mandarin' }
-];
+const getVarietyName = (varietyCode: string): string => {
+  for (const category in fruitVarieties) {
+    const variety = (fruitVarieties as any)[category].find((v: any) => v.Variety === varietyCode);
+    if (variety) {
+      return variety.Description;
+    }
+  }
+  return varietyCode; // Fallback to code if not found
+};
 
-export const producers: Producer[] = [
-  { 
-    id: 'P001', 
-    name: 'Naranja Packers', 
-    puc_codes: ['NL1163'], 
-    pucCount: 1, 
-    location: 'Western Cape',
-    siza_status: 'Platinum',
-    siza_exp_date: '2025-08-15',
-    globalgap_valid_till: '2026-01-01',
-    environmental_type: 'Nature\'s Choice',
-    environmental_exp_date: '2025-12-31'
-  },
-  { 
-    id: 'P002', 
-    name: 'Oranjezicht', 
-    puc_codes: ['NL0205'], 
-    pucCount: 1, 
-    location: 'Limpopo',
-    siza_status: 'Gold',
-    siza_exp_date: '2024-11-20',
-    tesco_expiry: '2025-05-10'
-  },
-  { 
-    id: 'P003', 
-    name: 'Citrus Growers', 
-    puc_codes: ['NL0109', 'CGE-001'], 
-    pucCount: 2, 
-    location: 'Eastern Cape',
-    globalgap_valid_till: '2025-07-22'
-  },
-  { 
-    id: 'P004', 
-    name: 'Yield Farms', 
-    puc_codes: ['Y1502'], 
-    pucCount: 1, 
-    location: 'Western Cape',
-    siza_status: 'Silver',
-    siza_exp_date: '2026-02-10',
-    leaf_expiry: '2025-09-09'
-  },
-  { id: 'P005', name: 'Sun Farming', puc_codes: ['SF-001'], pucCount: 1, location: 'Western Cape' },
-  { id: 'P006', name: 'Citrus Grove Estates', puc_codes: ['CGE-001'], pucCount: 1, location: 'Eastern Cape' },
-  { id: 'P007', name: 'Green Valley Orchards', puc_codes: ['GVO-001'], pucCount: 1, location: 'Limpopo' },
-  { id: 'P008', name: 'Apex Orchards', puc_codes: ['AO-001'], pucCount: 1, location: 'Western Cape', albert_heijn_expiry: '2025-03-14' },
-];
+export const commodities: Record<string, { Variety: string, Description: string }[]> = fruitVarieties;
 
+export const producers: Producer[] = producerInfo.ProducerInfo.map((p: any, index: number) => ({
+    id: p.producer_id || `prod-${index}`,
+    name: p.producer_name,
+    pucCount: p.puc_codes.length,
+    location: p.area || 'Unknown', 
+    puc_codes: p.puc_codes || [],
+    globalgap_valid_till: p.globalgap_valid_till,
+    siza_status: p.siza_status,
+    siza_exp_date: p.siza_exp_date,
+    environmental_type: p.environmental_type,
+    environmental_exp_date: p.environmental_exp_date,
+    albert_heijn_expiry: p.albert_heijn_expiry,
+    tesco_expiry: p.tesco_expiry,
+    leaf_expiry: p.leaf_expiry,
+}));
+
+export const accreditations: Accreditation[] = accreditationsData.accreditations;
+
+const pucToProducerMap = new Map<string, { producerName: string, location: string }>();
+producers.forEach(producer => {
+    producer.puc_codes.forEach(pucCode => {
+        pucToProducerMap.set(pucCode, { producerName: producer.name, location: producer.location });
+    });
+});
+
+export const pucs: PUC[] = pucToVariety.PUCVariety.map((pv, index) => {
+    const producerDetails = pucToProducerMap.get(pv.PUC) || { producerName: 'Unknown Producer', location: 'N/A' };
+    return {
+        id: (index + 1).toString(),
+        code: pv.PUC,
+        producer: producerDetails.producerName,
+        variety: getVarietyName(pv.Variety),
+        acreage: Math.floor(Math.random() * 100) + 10,
+        location: producerDetails.location,
+    };
+})
+.filter(puc => puc.producer !== 'Unknown Producer')
+.filter((puc, index, self) => index === self.findIndex((t) => t.code === puc.code));
+
+
+export const grades: Grade[] = gradesData;
+
+export const journeyBins: JourneyBin[] = journeyBinData;
+
+export const locationTracking: LocationTracking[] = locationTrackingData.data;
+
+export const palletJourney: PalletJourney[] = palletJourneyData.Pallet_Journey;
 
 export const inspections: Inspection[] = [
-  { id: '1', pucCode: 'NL1163', date: '2024-07-15', inspector: 'J. Doe', result: 'Pass', notes: 'Crops look healthy, minor pest activity noted.' },
-  { id: '2', pucCode: 'NL0205', date: '2024-07-14', inspector: 'S. Smith', result: 'Pass', notes: 'Good fruit development, irrigation schedule optimal.' },
-  { id: '3', pucCode: 'NL0109', date: '2024-07-16', inspector: 'J. Doe', result: 'Fail', notes: 'Evidence of citrus black spot, treatment required.' },
-  { id: '4', pucCode: 'Y1502', date: '2024-07-15', inspector: 'P. Jones', result: 'Pass', notes: 'Excellent condition, harvest can proceed as planned.' },
+  { id: '1', pucCode: 'PUC-SF-001', date: '2024-06-15', inspector: 'John Doe', result: 'Pass', notes: 'Excellent crop health.' },
+  { id: '2', pucCode: 'PUC-GVO-001', date: '2024-06-20', inspector: 'Jane Smith', result: 'Pass', notes: 'Minor pest presence, addressed.' },
+  { id: '3', pucCode: 'PUC-CGE-001', date: '2024-06-22', inspector: 'John Doe', result: 'Fail', notes: 'High citrus greening detected.' },
+  { id: '4', pucCode: 'PUC-AO-001', date: '2024-07-01', inspector: 'Emily White', result: 'Pass', notes: 'Ready for harvest.' },
 ];
 
 export const harvests: Harvest[] = [
-  { id: '1', pucCode: 'NL1163', harvestDate: '2024-07-20', quantity: 15.5, status: 'At Packhouse', progress: 60 },
-  { id: '2', pucCode: 'NL0205', harvestDate: '2024-07-19', quantity: 22.0, status: 'Processed', progress: 100 },
-  { id: '3', pucCode: 'NL0109', harvestDate: '2024-07-21', quantity: 8.2, status: 'In Transit', progress: 25 },
-  { id: '4', pucCode: 'Y1502', harvestDate: '2024-07-18', quantity: 12.8, status: 'Processed', progress: 100 },
-  { id: '5', pucCode: 'SF-001', harvestDate: '2024-07-22', quantity: 18.0, status: 'At Packhouse', progress: 50 },
-  { id: '6', pucCode: 'CGE-001', harvestDate: '2024-07-23', quantity: 14.3, status: 'In Transit', progress: 30 },
-  { id: '7', pucCode: 'GVO-001', harvestDate: '2024-07-24', quantity: 11.9, status: 'Awaiting Inspection', progress: 10 },
+  { id: '1', pucCode: 'PUC-SF-001', crop: 'Cripps Pink Apples', quantity: 15, harvestDate: '2024-07-10', status: 'At Packhouse', progress: 66 },
+  { id: '2', pucCode: 'PUC-GVO-001', crop: 'Organic Blueberries', quantity: 5, harvestDate: '2024-07-12', status: 'In Transit', progress: 33 },
+  { id: '3', pucCode: 'PUC-CGE-002', crop: 'Eureka Lemons', quantity: 20, harvestDate: '2024-07-15', status: 'Harvesting', progress: 10 },
+  { id: '4', pucCode: 'PUC-AO-001', crop: 'Golden Delicious', quantity: 18, harvestDate: '2024-07-05', status: 'Processed', progress: 100 },
 ];
 
 export const packhouseBatches: PackhouseBatch[] = [
-  { id: '1', pucCode: 'NL1163', binId: 'BIN-A001', palletId: 'PAL-X01', packoutYield: 92.5, defects: 3.1 },
-  { id: '2', pucCode: 'NL0205', binId: 'BIN-B002', palletId: 'PAL-Y02', packoutYield: 88.1, defects: 5.4 },
-  { id: '3', pucCode: 'Y1502', binId: 'BIN-C003', palletId: 'PAL-Z03', packoutYield: 95.2, defects: 1.8 },
-  { id: '4', pucCode: 'SF-001', binId: 'BIN-D004', palletId: 'PAL-W04', packoutYield: 91.3, defects: 4.2 },
+  { id: '1', pucCode: 'PUC-AO-001', binId: 'BIN-483', palletId: 'PAL-991', packoutYield: 92.5, defects: 3.1, gradeA: 70, gradeB: 22.5 },
+  { id: '2', pucCode: 'PUC-SF-002', binId: 'BIN-501', palletId: 'PAL-992', packoutYield: 88.1, defects: 5.4, gradeA: 65, gradeB: 23.1 },
+  { id: '3', pucCode: 'PUC-SF-001', binId: 'BIN-512', palletId: 'PAL-993', packoutYield: 95.2, defects: 1.9, gradeA: 80, gradeB: 15.2 },
 ];
-
-export const journeyBins: JourneyBin[] = [
-  { PUC: 'NL1163', PACKHOUSE: 'Paarl', Cultivar: 'Citrus', Variety: 'Valencia', Bins: 102, BinsKG: 25500 },
-  { PUC: 'NL0205', PACKHOUSE: 'Stellenbosch', Cultivar: 'Citrus', Variety: 'Navel', Bins: 150, BinsKG: 37500 },
-  { PUC: 'SF-001', PACKHOUSE: 'Paarl', Cultivar: 'Citrus', Variety: 'Navel Late', Bins: 80, BinsKG: 20000 },
-  { PUC: 'CGE-001', PACKHOUSE: 'Stellenbosch', Cultivar: 'Citrus', Variety: 'Valencia', Bins: 120, BinsKG: 30000 },
-  { PUC: 'NL0109', PACKHOUSE: 'Citrusdal', Cultivar: 'Citrus', Variety: 'Lemon', Bins: 200, BinsKG: 50000 },
-];
-
-export const palletJourney: PalletJourney[] = [
-  { Pallet_ID: 'PAL-X01', PUC: 'NL1163', Grade: 'A', TargetMarket: 'EU', 'Run No': 'RUN001' },
-  { Pallet_ID: 'PAL-Y02', PUC: 'NL0205', Grade: 'B', TargetMarket: 'US', 'Run No': 'RUN002' },
-  { Pallet_ID: 'PAL-Z03', PUC: 'Y1502', Grade: 'A', TargetMarket: 'UK', 'Run No': 'RUN003' },
-  { Pallet_ID: 'PAL-W04', PUC: 'SF-001', Grade: 'A', TargetMarket: 'EU', 'Run No': 'RUN004' },
-];
-
-export const commodities = {
-    "Citrus": [
-        {"Description":"Lemon"},
-        {"Description":"Grapefruit"},
-        {"Description":"Valencia"},
-        {"Description":"Navel"},
-        {"Description":"Mandarin"},
-        {"Description":"Cara Cara"},
-        {"Description":"Navel Late"}
-    ],
-    "Pome Fruit": [
-        {"Description":"Apples"},
-        {"Description":"Pears"}
-    ],
-    "Stone Fruit": [
-        {"Description":"Peaches"},
-        {"Description":"Nectarines"},
-        {"Description":"Plums"}
-    ]
-}

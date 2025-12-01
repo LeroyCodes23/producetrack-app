@@ -1,0 +1,106 @@
+{
+  "accreditations": [
+    {
+      "id": "globalgap",
+      "name": "GLOBALG.A.P.",
+      "category": "Export-related accreditation",
+      "short_description": "Globally recognized standard for Good Agricultural Practices (GAP).",
+      "details": "A consumer-facing standard that certifies safe and sustainable agricultural production. It covers topics like food safety, environmental protection, and worker health, safety, and welfare. It is often a mandatory requirement for supplying major retailers worldwide.",
+      "region": "Global",
+      "prerequisites": [
+        "Implementation of Good Agricultural Practices (GAP)",
+        "Comprehensive documentation and record keeping",
+        "Worker safety and welfare policies",
+        "Integrated Pest Management (IPM) plan"
+      ],
+      "notes": "The baseline standard for many exporters. Often includes add-ons like GRASP for worker welfare."
+    },
+    {
+      "id": "siza_ethical",
+      "name": "SIZA Ethical",
+      "category": "Market and sustainability accreditation",
+      "short_description": "South African social sustainability standard for agriculture.",
+      "details": "The Sustainability Initiative of South Africa (SIZA) Ethical Trade standard is a local, holistic social standard designed to help South African farmers ensure ethical working conditions and comply with national labor legislation. It is recognized by many international buyers.",
+      "region": "South Africa",
+      "prerequisites": [
+        "Compliance with South African labor laws",
+        "Implementation of policies on wages, working hours, and non-discrimination",
+        "Clear worker communication and grievance procedures"
+      ],
+      "notes": "SIZA offers a step-by-step improvement approach and has mutual recognition with GLOBALG.A.P. GRASP."
+    },
+    {
+      "id": "siza_environmental",
+      "name": "SIZA Environmental",
+      "category": "Market and sustainability accreditation",
+      "short_description": "South African environmental sustainability standard.",
+      "details": "The SIZA Environmental standard provides a practical and achievable framework for South African farmers to measure and improve their environmental impact. It focuses on areas like water management, soil health, waste management, and biodiversity.",
+      "region": "South Africa",
+      "prerequisites": [
+        "Environmental risk assessment",
+        "Water and energy use monitoring",
+        "Soil management and conservation plan",
+        "Integrated Pest Management (IPM) and chemical records"
+      ],
+      "notes": "Adopting both SIZA Ethical and Environmental provides a comprehensive sustainability profile."
+    },
+    {
+      "id": "fsma",
+      "name": "FSMA (Food Safety Modernization Act) PSR",
+      "category": "Export-related accreditation",
+      "short_description": "U.S. federal regulation for the safety of produce grown for human consumption.",
+      "details": "The FSMA Produce Safety Rule is a mandatory U.S. regulation, not a certification. It establishes science-based minimum standards for the safe growing, harvesting, packing, and holding of fruits and vegetables. Compliance is legally required for export to the USA.",
+      "region": "United States (Mandatory for exporters)",
+      "prerequisites": [
+        "Water quality testing and management",
+        "Soil amendment (compost) standards",
+        "Worker health and hygiene training",
+        "Prevention of contamination from animals and equipment"
+      ],
+      "notes": "Unlike other accreditations, this is a legal requirement enforced by the FDA."
+    },
+    {
+      "id": "albert_heijn",
+      "name": "Albert Heijn Quality Standard",
+      "category": "Buyer-Specific Standards",
+      "short_description": "Private quality and sustainability standard for suppliers to Albert Heijn.",
+      "details": "A comprehensive private standard set by the Dutch retailer Albert Heijn for its suppliers. It typically incorporates and often exceeds the requirements of GLOBALG.A.P., with additional strict criteria for quality, food safety, and sustainability (including SIZA).",
+      "region": "Netherlands (Albert Heijn suppliers)",
+      "prerequisites": [
+        "GLOBALG.A.P. Certification (often a minimum requirement)",
+        "Compliance with Albert Heijn's specific quality parameters",
+        "Adherence to their sustainability policies (e.g., SIZA)"
+      ],
+      "notes": "Direct suppliers to Albert Heijn must pass their proprietary audit."
+    },
+    {
+      "id": "tesco",
+      "name": "Tesco Nurture",
+      "category": "Buyer-Specific Standards",
+      "short_description": "Tesco's own farm management standard for fresh produce suppliers.",
+      "details": "Tesco Nurture is the UK retailer's private standard for its fruit, vegetable, and salad suppliers. It focuses on integrated crop management, minimizing environmental impact, and ensuring high levels of food safety and quality. It is built upon a GLOBALG.A.P. foundation.",
+      "region": "United Kingdom (Tesco suppliers)",
+      "prerequisites": [
+        "GLOBALG.A.P. Certification",
+        "Implementation of Tesco's specific pesticide and residue management protocols",
+        "Commitment to biodiversity and environmental protection"
+      ],
+      "notes": "Suppliers must be specifically approved and audited against the Tesco Nurture standard."
+    },
+    {
+      "id": "leaf_marque",
+      "name": "LEAF Marque",
+      "category": "Market and sustainability accreditation",
+      "short_description": "Environmental assurance system recognizing more sustainable farming.",
+      "details": "LEAF (Linking Environment And Farming) Marque is an environmental certification that assures food and flowers have been produced by farmers who are committed to improving the environment for wildlife and society. It focuses on Integrated Farm Management (IFM).",
+      "region": "Global (Prominent in the UK and EU)",
+      "prerequisites": [
+        "Implementation of Integrated Farm Management (IFM) principles",
+        "Biodiversity and habitat management plan",
+        "Energy efficiency and water conservation measures",
+        "Soil management and health plan"
+      ],
+      "notes": "Often used in conjunction with GLOBALG.A.P. to demonstrate a stronger environmental commitment."
+    }
+  ]
+}
