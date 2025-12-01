@@ -85,9 +85,9 @@ export default function SensusTable() {
       return allSensusData;
     }
     return allSensusData.filter(item =>
-      item.producer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.puc.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.variety.toLowerCase().includes(searchTerm.toLowerCase())
+      ((item.producer_name || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ((item.puc || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ((item.variety || '').toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [searchTerm, allSensusData]);
 
