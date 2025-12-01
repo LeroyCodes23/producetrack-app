@@ -19,13 +19,16 @@ export function AppSidebar() {
   return (
     <>
         <SidebarHeader>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" className="rounded-lg bg-primary text-primary-foreground" asChild>
                     <Link href={userRole === 'producer' ? '/producer-portal' : '/dashboard'}>
                         <Leaf />
                     </Link>
                 </Button>
-                <span className="font-headline text-lg font-semibold">ProduceTrack</span>
+                <div>
+                  <span className="font-headline text-lg font-bold">Goede Hoop Citrus</span>
+                  <span className="block text-xs text-sidebar-foreground/70 -mt-1">Powered By ProduceTrack Pro</span>
+                </div>
             </div>
         </SidebarHeader>
 

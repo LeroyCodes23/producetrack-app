@@ -1,9 +1,9 @@
+'use client'
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, MoreHorizontal } from "lucide-react";
+import { PlusCircle, Search, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,17 +24,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { pucs, producers } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function PucManagementPage() {
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const pucData = pucs.map(puc => {
-    const producer = producers.find(p => p.name === puc.producer);
-    return {
-      ...puc,
-      location: producer?.location || 'N/A',
-      status: ['Active', 'Inactive', 'Pending'][Math.floor(Math.random() * 3)] as 'Active' | 'Inactive' | 'Pending'
-    }
-  });
+  const pucData = useMemo(() => {
+    return pucs.map(puc => {
+      const producer = producers.find(p => p.name === puc.producer);
+      return {
+        ...puc,
+        location: producer?.location || 'N/A',
+        status: ['Active', 'Inactive', 'Pending'][Math.floor(Math.random() * 3)] as 'Active' | 'Inactive' | 'Pending'
+      }
+    });
+  }, []);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -48,6 +53,16 @@ export default function PucManagementPage() {
         return 'default';
     }
   }
+
+  const filteredPucs = useMemo(() => {
+    if (!searchTerm) {
+      return pucData;
+    }
+    return pucData.filter(puc => 
+      puc.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      puc.producer.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [pucData, searchTerm]);
 
 
   return (
@@ -63,7 +78,22 @@ export default function PucManagementPage() {
         </Button>
       </div>
       <Card>
-        <CardContent className="mt-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div className="relative w-full max-w-sm">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    type="search" 
+                    placeholder="Search by PUC or Producer..." 
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+        <ScrollArea className="h-[70vh]">
           <Table className="table-fixed">
             <TableHeader>
               <TableRow>
@@ -78,7 +108,7 @@ export default function PucManagementPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pucData.map((puc) => (
+              {filteredPucs.map((puc) => (
                 <TableRow key={puc.id}>
                   <TableCell className="font-medium">{puc.code}</TableCell>
                   <TableCell>{puc.producer}</TableCell>
@@ -109,6 +139,7 @@ export default function PucManagementPage() {
               ))}
             </TableBody>
           </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
