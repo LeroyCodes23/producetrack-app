@@ -1,0 +1,53 @@
+
+'use client';
+
+import {
+  SidebarHeader,
+  SidebarContent,
+  SidebarFooter,
+} from "@/components/ui/sidebar";
+import { SidebarNav } from "./sidebar-nav";
+import { Button } from "../ui/button";
+import { Leaf } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
+import { Avatar, AvatarFallback } from "../ui/avatar";
+
+export function AppSidebar() {
+  const { userRole } = useAuth();
+  
+  return (
+    <>
+        <SidebarHeader>
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="rounded-lg bg-primary text-primary-foreground" asChild>
+                    <Link href={userRole === 'producer' ? '/producer-portal' : '/dashboard'}>
+                        <Leaf />
+                    </Link>
+                </Button>
+                <span className="font-headline text-lg font-semibold">ProduceTrack</span>
+            </div>
+        </SidebarHeader>
+
+        <SidebarContent>
+            <SidebarNav />
+        </SidebarContent>
+
+        <SidebarFooter>
+             <div className="flex items-center gap-3 p-2">
+                <Avatar className="h-9 w-9">
+                    <AvatarFallback>{userRole === 'admin' ? 'A' : 'P'}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+                    <span className="text-sm font-medium text-sidebar-foreground">
+                        {userRole === 'admin' ? 'Admin User' : 'Producer User'}
+                    </span>
+                    <span className="text-xs text-sidebar-foreground/70">
+                         {userRole === 'admin' ? 'admin@example.com' : 'producer@example.com'}
+                    </span>
+                </div>
+            </div>
+        </SidebarFooter>
+    </>
+  );
+}

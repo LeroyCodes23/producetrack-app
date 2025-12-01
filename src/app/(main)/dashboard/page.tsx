@@ -18,9 +18,10 @@ import { Progress } from "@/components/ui/progress";
 import { CircleDollarSign, Package, Tractor, Percent } from "lucide-react";
 import Image from "next/image";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import LineChart from "@/components/LineChart";
+import ReusableLineChart from "@/components/LineChart";
 import { harvests } from "@/lib/data";
 import ParallaxBackground from "../producer-portal/parallax-background";
+import type { ChartConfig } from "@/components/ui/chart";
 
 export default function DashboardPage() {
   const dashboardBanner = PlaceHolderImages.find(
@@ -31,31 +32,21 @@ export default function DashboardPage() {
   const avgPackout = 91.6; // Mock data
   const totalExportValue = 250000; // Mock data
 
-  const lineChartData = {
-    labels: harvests.map((h) => new Date(h.harvestDate).toLocaleDateString()),
-    datasets: [
-      {
-        label: "Quantity Harvested (Tons)",
-        data: harvests.map((h) => h.quantity),
-        borderColor: "rgba(75, 192, 192, 1)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-      },
-    ],
-  };
+  const lineChartData = harvests.map((h) => ({
+    date: new Date(h.harvestDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    quantity: h.quantity,
+  }));
 
-  const lineChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false, // important for responsive container
-    plugins: {
-      legend: {
-        position: "top" as const,
-      },
-      title: {
-        display: true,
-        text: "Harvest Quantity Over Time",
-      },
+  const chartConfig = {
+    quantity: {
+      label: "Quantity (Tons)",
+      color: "hsl(var(--chart-2))",
     },
-  };
+    xAxis: {
+      dataKey: "date",
+    }
+  } satisfies ChartConfig;
+
 
   return (
     <div className="space-y-4">
@@ -148,7 +139,7 @@ export default function DashboardPage() {
             <CardContent className="pl-2">
               {/* Chart wrapper: fixed height + shrinkable */}
               <div className="w-full min-w-0 h-64">
-                <LineChart data={lineChartData} options={lineChartOptions} />
+                <ReusableLineChart data={lineChartData} config={chartConfig} />
               </div>
             </CardContent>
           </Card>
