@@ -34,6 +34,9 @@ export function AppSidebar() {
 
         <SidebarContent>
             <SidebarNav />
+            <div className="mt-auto p-4 text-xs text-sidebar-foreground/50">
+              Created By MM Tech (Pty) Ltd, in partnership with Goede Hoop Citrus (Pty) Ltd
+            </div>
         </SidebarContent>
 
         <SidebarFooter>
