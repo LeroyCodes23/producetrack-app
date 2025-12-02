@@ -14,12 +14,18 @@ const config = {
 };
 
 export async function GET(req: NextRequest) {
+  let pool;
   try {
-    await sql.connect(config);
-    const result = await sql.query`SELECT * FROM SensusTable`; // Replace SensusTable with your actual table name
+    pool = await sql.connect(config);
+    const result = await pool.request().execute('dbo.CurrentSensus');
     return NextResponse.json(result.recordset);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
+    return new NextResponse(JSON.stringify({ error: err.message || 'An unknown database error occurred' }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }

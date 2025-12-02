@@ -20,37 +20,41 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SensusData {
-    producer_id: string;
-    producer_name: string;
-    comm: string;
-    variety: string;
-    orchard: string;
-    puc: string;
-    big_status: string;
-    plant_year: string;
-    onderstam: string;
-    tree_width: number;
-    row_width: number;
-    tree_count: number;
-    sum_of_hectares: number;
+    FatherCard: string;
+    CardName: string;
+    FarmName: string;
+    Orchard: string;
+    FruitCode: string;
+    PUC: string;
+    YearPlnt: string;
+    TreeWidth: number;
+    RowWidth: number;
+    TreeCount: number;
+    Ha: number;
+    HaBearing: number;
 }
 
 export default function SensusTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sensusData, setSensusData] = useState<SensusData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
         const response = await fetch('/api/sensus-data');
         if (!response.ok) {
-          throw new Error('Failed to fetch data');
+          const errorData = await response.json().catch(() => ({ error: 'Failed to fetch data' }));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         setSensusData(data);
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
+        setError(error.message || 'An unexpected error occurred.');
       } finally {
         setIsLoading(false);
       }
@@ -64,11 +68,84 @@ export default function SensusTable() {
       return sensusData;
     }
     return sensusData.filter(item =>
-      ((item.producer_name || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
-      ((item.puc || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
-      ((item.variety || '').toLowerCase().includes(searchTerm.toLowerCase()))
+      ((item.CardName || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ((item.PUC || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
+      ((item.FruitCode || '').toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [searchTerm, sensusData]);
+
+  const renderTableContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center items-center h-[60vh]">
+          <p>Loading data...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex justify-center items-center h-[60vh] text-red-500">
+          <p>Error: {error}</p>
+        </div>
+      );
+    }
+
+    return (
+      <ScrollArea className="h-[60vh]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Producer Code</TableHead>
+              <TableHead>Producer Name</TableHead>
+              <TableHead>Farm Name</TableHead>
+              <TableHead>Comm</TableHead>
+              <TableHead>Variety</TableHead>
+              <TableHead>Orchard</TableHead>
+              <TableHead>PUC</TableHead>
+              <TableHead>Big Status</TableHead>
+              <TableHead>Plant year</TableHead>
+              <TableHead>Onderstam</TableHead>
+              <TableHead>TreeWidth</TableHead>
+              <TableHead>RowWidth</TableHead>
+              <TableHead>Tree Count</TableHead>
+              <TableHead>Sum of Hectares</TableHead>
+              <TableHead>Bearing Ha</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredData.length > 0 ? (
+              filteredData.map((item, index) => (
+                <TableRow key={`${item.PUC}-${item.Orchard}-${index}`}>
+                  <TableCell>{item.FatherCard}</TableCell>
+                  <TableCell>{item.CardName}</TableCell>
+                  <TableCell>{item.FarmName}</TableCell>
+                  <TableCell>N/A</TableCell>
+                  <TableCell>{item.FruitCode}</TableCell>
+                  <TableCell>{item.Orchard}</TableCell>
+                  <TableCell>{item.PUC}</TableCell>
+                  <TableCell>N/A</TableCell>
+                  <TableCell>{item.YearPlnt}</TableCell>
+                  <TableCell>N/A</TableCell>
+                  <TableCell>{item.TreeWidth}</TableCell>
+                  <TableCell>{item.RowWidth}</TableCell>
+                  <TableCell>{item.TreeCount}</TableCell>
+                  <TableCell>{item.Ha}</TableCell>
+                  <TableCell>{item.HaBearing}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={15} className="h-24 text-center text-muted-foreground">
+                  No sensus data available.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+    );
+  };
 
   return (
     <Card>
@@ -78,7 +155,7 @@ export default function SensusTable() {
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                         type="search" 
-                        placeholder="Search by producer, PUC, or variety..." 
+                        placeholder="Search by producer name, PUC, or variety..." 
                         className="pl-8"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -91,52 +168,7 @@ export default function SensusTable() {
             </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-            <div className="flex justify-center items-center h-[60vh]">
-                <p>Loading data...</p>
-            </div>
-        ) : (
-          <ScrollArea className="h-[60vh]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Producer Code</TableHead>
-                  <TableHead>Farm Name</TableHead>
-                  <TableHead>Comm</TableHead>
-                  <TableHead>Variety</TableHead>
-                  <TableHead>Orchard</TableHead>
-                  <TableHead>PUC</TableHead>
-                  <TableHead>Big Status</TableHead>
-                  <TableHead>Plant year</TableHead>
-                  <TableHead>Onderstam</TableHead>
-                  <TableHead>TreeWidth</TableHead>
-                  <TableHead>RowWidth</TableHead>
-                  <TableHead>Tree Count</TableHead>
-                  <TableHead>Sum of Hectares</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredData.map((item, index) => (
-                  <TableRow key={`${item.puc}-${index}`}>
-                    <TableCell>{item.producer_id}</TableCell>
-                    <TableCell>{item.producer_name}</TableCell>
-                    <TableCell>{item.comm}</TableCell>
-                    <TableCell>{item.variety}</TableCell>
-                    <TableCell>{item.orchard}</TableCell>
-                    <TableCell>{item.puc}</TableCell>
-                    <TableCell>{item.big_status}</TableCell>
-                    <TableCell>{item.plant_year}</TableCell>
-                    <TableCell>{item.onderstam}</TableCell>
-                    <TableCell>{item.tree_width}</TableCell>
-                    <TableCell>{item.row_width}</TableCell>
-                    <TableCell>{item.tree_count}</TableCell>
-                    <TableCell>{item.sum_of_hectares}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
+        {renderTableContent()}
       </CardContent>
     </Card>
   );
