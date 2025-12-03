@@ -67,10 +67,14 @@ export default function SensusTable() {
     if (!searchTerm) {
       return sensusData;
     }
+    const q = String(searchTerm).toLowerCase();
+    const normalize = (v: any) => String(v ?? '').toLowerCase();
+
     return sensusData.filter(item =>
-      ((item.CardName || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
-      ((item.PUC || '').toLowerCase().includes(searchTerm.toLowerCase())) ||
-      ((item.FruitCode || '').toLowerCase().includes(searchTerm.toLowerCase()))
+      normalize(item.FatherCard).includes(q) ||
+      normalize(item.CardName).includes(q) ||
+      normalize(item.PUC).includes(q) ||
+      normalize(item.FruitCode).includes(q)
     );
   }, [searchTerm, sensusData]);
 
@@ -154,11 +158,11 @@ export default function SensusTable() {
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
-                        type="search" 
-                        placeholder="Search by producer name, PUC, or variety..." 
-                        className="pl-8"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                      type="search" 
+                      placeholder="Search by producer code, producer name, PUC, or variety..." 
+                      className="pl-8"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <Button>
