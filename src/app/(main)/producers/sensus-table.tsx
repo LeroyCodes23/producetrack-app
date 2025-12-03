@@ -32,6 +32,15 @@ interface SensusData {
     TreeCount: number;
     Ha: number;
     HaBearing: number;
+  // new/optional columns returned by stored procedure
+  Commodity?: string;
+  Comm?: string;
+  Cultivar?: string;
+  Variety?: string;
+  BigStatus?: string;
+  // some DBs might return column names with spaces
+  // use index access for those if necessary when rendering
+  OnderStam?: string;
 }
 
 export default function SensusTable() {
@@ -78,6 +87,15 @@ export default function SensusTable() {
     );
   }, [searchTerm, sensusData]);
 
+  // helper to pick the first non-empty value from possible column names
+  const pickField = (item: any, ...keys: string[]) => {
+    for (const k of keys) {
+      const v = (item as any)[k];
+      if (v !== undefined && v !== null && String(v) !== '') return String(v);
+    }
+    return 'N/A';
+  };
+
   const renderTableContent = () => {
     if (isLoading) {
       return (
@@ -104,6 +122,7 @@ export default function SensusTable() {
               <TableHead>Producer Name</TableHead>
               <TableHead>Farm Name</TableHead>
               <TableHead>Comm</TableHead>
+              <TableHead>Cultivar</TableHead>
               <TableHead>Variety</TableHead>
               <TableHead>Orchard</TableHead>
               <TableHead>PUC</TableHead>
@@ -124,13 +143,14 @@ export default function SensusTable() {
                   <TableCell>{item.FatherCard}</TableCell>
                   <TableCell>{item.CardName}</TableCell>
                   <TableCell>{item.FarmName}</TableCell>
-                  <TableCell>N/A</TableCell>
-                  <TableCell>{item.FruitCode}</TableCell>
+                      <TableCell>{pickField(item, 'Commodity', 'Comm')}</TableCell>
+                      <TableCell>{pickField(item, 'Cultivar')}</TableCell>
+                      <TableCell>{pickField(item, 'Variety', 'FruitCode')}</TableCell>
                   <TableCell>{item.Orchard}</TableCell>
                   <TableCell>{item.PUC}</TableCell>
-                  <TableCell>N/A</TableCell>
-                  <TableCell>{item.YearPlnt}</TableCell>
-                  <TableCell>N/A</TableCell>
+                      <TableCell>{pickField(item, 'BigStatus', 'Big Status')}</TableCell>
+                      <TableCell>{item.YearPlnt}</TableCell>
+                      <TableCell>{pickField(item, 'OnderStam', 'Onder Stam')}</TableCell>
                   <TableCell>{item.TreeWidth}</TableCell>
                   <TableCell>{item.RowWidth}</TableCell>
                   <TableCell>{item.TreeCount}</TableCell>
