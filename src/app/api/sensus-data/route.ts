@@ -29,9 +29,10 @@ export async function GET(req: NextRequest) {
       console.log('[sensus-api] using primary DB_DATABASE=', primaryDb);
     }
 
+    const sensusProc = process.env.SENSUS_PROC || 'dbo.CurrentSensus';
     let result;
     try {
-      result = await pool.request().execute('dbo.CurrentSensus');
+      result = await pool.request().execute(sensusProc);
     } catch (err: any) {
       const msg = String(err?.message || err);
       if (msg.includes('Could not find stored procedure')) {

@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
       // default: use existing credentials but target the GHS_FwApps database name
       pool = await getPool('GHS_FwApps');
     }
-    const result = await pool.request().execute('dbo.Solas_CurrentSeason');
+    const solasProc = process.env.SOLAS_PROC || 'dbo.Solas_CurrentSeason';
+    const result = await pool.request().execute(solasProc);
     const rows = result.recordset || [];
 
     const totals = new Map<string, number>();
