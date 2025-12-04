@@ -1,6 +1,6 @@
 import sql from 'mssql';
 
-const config: sql.config = {
+const baseConfig: sql.config = {
   server: process.env.DB_HOST || '',
   database: process.env.DB_DATABASE || '',
   user: process.env.DB_USER || '',
@@ -11,22 +11,25 @@ const config: sql.config = {
   },
 };
 
-let pool: sql.ConnectionPool | undefined;
+// cache pools by database name to avoid recreating connections
+const pools: Record<string, sql.ConnectionPool | undefined> = {};
 
-export async function getPool(): Promise<sql.ConnectionPool> {
-  if (pool) {
+export async function getPool(database?: string): Promise<sql.ConnectionPool> {
+  const dbName = database || baseConfig.database || '';
+
+  if (pools[dbName]) {
     try {
-      if (pool.connected) return pool;
-      // try reconnecting if previously disconnected
-      await pool.connect();
-      return pool;
+      if (pools[dbName]!.connected) return pools[dbName]!;
+      await pools[dbName]!.connect();
+      return pools[dbName]!;
     } catch (err) {
-      pool = undefined;
+      pools[dbName] = undefined;
     }
   }
 
-  // create a new pool and connect
-  pool = await sql.connect(config);
+  const cfg: sql.config = { ...baseConfig, database: dbName };
+  const pool = await sql.connect(cfg);
+  pools[dbName] = pool;
   return pool;
 }
 

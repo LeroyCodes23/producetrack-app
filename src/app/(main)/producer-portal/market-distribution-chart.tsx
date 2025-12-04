@@ -1,6 +1,7 @@
 
 'use client'
 
+import { useEffect, useMemo, useState } from 'react';
 import { Pie, PieChart, Cell } from "recharts";
 import {
   ChartConfig,
@@ -11,37 +12,50 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart";
 
-const chartData = [
-  { market: "UK", value: 480.31, color: "#FFC300" },
-  { market: "US", value: 250.29, color: "#E74C3C" },
-  { market: "EU", value: 151.08, color: "#293A80" },
-  { market: "CA", value: 81.25, color: "#3498DB" },
-  { market: "OT", value: 45.42, color: "#9B59B6" },
-  { market: "FE", value: 26.29, color: "#F39C12" },
-  { market: "ME", value: 11.39, color: "#600080" },
-  { market: "ZA", value: 0.24, color: "#00BFFF" },
-  { market: "RU", value: 0, color: "#1C2833" },
-];
+type ApiItem = { market: string; value: number; pct?: number };
 
-const chartConfig = {
-  value: {
-    label: "Value",
-  },
-  UK: { label: "UK", color: "#FFC300" },
-  US: { label: "US", color: "#E74C3C" },
-  EU: { label: "EU", color: "#293A80" },
-  CA: { label: "CA", color: "#3498DB" },
-  OT: { label: "OT", color: "#9B59B6" },
-  FE: { label: "FE", color: "#F39C12" },
-  ME: { label: "ME", color: "#600080" },
-  ZA: { label: "ZA", color: "#00BFFF" },
-  RU: { label: "RU", color: "#1C2833" },
-} satisfies ChartConfig;
+function generateColor(i: number, n: number) {
+  const hue = Math.round((i * 360) / n) % 360;
+  return `hsl(${hue} 75% 50%)`;
+}
 
 export default function MarketDistributionChart() {
+  const [chartData, setChartData] = useState<ApiItem[] | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    fetch('/api/market-distribution')
+      .then((r) => r.json())
+      .then((data: ApiItem[]) => {
+        if (!mounted) return;
+        setChartData(data || []);
+      })
+      .catch((err) => {
+        console.error('Failed to load market distribution:', err);
+        if (mounted) setChartData([]);
+      })
+      .finally(() => mounted && setLoading(false));
+    return () => { mounted = false };
+  }, []);
+
+  const config = useMemo(() => {
+    const cfg: any = { value: { label: 'Value' } };
+    if (chartData) {
+      chartData.forEach((d) => { cfg[d.market] = { label: d.market } });
+    }
+    return cfg as ChartConfig;
+  }, [chartData]);
+
+  const coloredData = useMemo(() => {
+    if (!chartData) return [] as (ApiItem & { color: string })[];
+    return chartData.map((d, i) => ({ ...d, color: generateColor(i, chartData.length) }));
+  }, [chartData]);
+
   return (
     <ChartContainer
-      config={chartConfig}
+      config={config}
       className="min-h-[200px] w-full"
     >
       <PieChart>
@@ -50,14 +64,14 @@ export default function MarketDistributionChart() {
           content={<ChartTooltipContent hideLabel />}
         />
         <Pie
-          data={chartData}
+          data={coloredData}
           dataKey="value"
           nameKey="market"
           innerRadius={32}
           strokeWidth={5}
           outerRadius={60}
         >
-          {chartData.map((entry, index) => (
+          {coloredData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
