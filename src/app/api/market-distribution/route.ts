@@ -15,19 +15,53 @@ function normalizeRowKeys(row: Record<string, any>) {
 
 export async function GET(req: NextRequest) {
   try {
-    // If DB2_* env vars exist, use them for the GHS_FwApps connection
-    // This allows separate credentials for the GHS database on the same or different server.
+    // Choose DB/pool for GHS Solas proc. Prefer DB2_* env vars (separate credentials).
+    const fallbackDb = 'GHS_FwApps';
     let pool;
     if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
-      // use DB2_* env vars (prefix DB2)
-      // pass fallbackDatabase so we connect to GHS_FwApps if DB2_DATABASE is missing
-      pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
+      pool = await getPoolFromEnv('DB2', fallbackDb);
+      console.log('[market-api] using DB2_* env vars; target DB=', process.env.DB2_DATABASE || fallbackDb);
     } else {
-      // default: use existing credentials but target the GHS_FwApps database name
-      pool = await getPool('GHS_FwApps');
+      pool = await getPool(fallbackDb);
+      console.log('[market-api] using primary credentials; target DB=', fallbackDb);
     }
-    const solasProc = process.env.SOLAS_PROC || 'dbo.Solas_CurrentSeason';
-    const result = await pool.request().execute(solasProc);
+
+    // Try multiple candidate procedure names to tolerate naming differences
+    const candidates = [process.env.SOLAS_PROC, 'dbo.Solas_CurrentSeason', 'Solas_CurrentSeason'].filter(Boolean) as string[];
+
+    const tryCandidates = async (p: any) => {
+      for (const procName of candidates) {
+        try {
+          console.log('[market-api] trying proc:', procName);
+          const res = await p.request().execute(procName);
+          console.log('[market-api] succeeded with proc:', procName);
+          return res;
+        } catch (e: any) {
+          const m = String(e?.message || e);
+          if (!m.includes('Could not find stored procedure')) {
+            // unexpected error - rethrow
+            throw e;
+          }
+          // otherwise continue to next candidate
+        }
+      }
+      return null;
+    };
+
+    let result = await tryCandidates(pool);
+    if (!result) {
+      // if we had DB2 envs, also try explicit fallback DB in case the DB name differs
+      if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
+        pool = await getPool(fallbackDb);
+        console.log('[market-api] trying explicit fallback DB=', fallbackDb);
+        result = await tryCandidates(pool);
+      }
+    }
+
+    if (!result) {
+      throw new Error('Solas proc not found in any candidate names or databases');
+    }
+
     const rows = result.recordset || [];
 
     const totals = new Map<string, number>();
