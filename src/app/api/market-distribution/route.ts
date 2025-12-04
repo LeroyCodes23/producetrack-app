@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // server-side API that calls dbo.Solas_CurrentSeason in the GHS_FwApps database
 // and aggregates Solas Kg per Target Country.
-import { getPool } from '@/lib/db';
+import { getPool, getPoolFromEnv } from '@/lib/db';
 
 function normalizeRowKeys(row: Record<string, any>) {
   const norm: Record<string, any> = {};
@@ -15,8 +15,21 @@ function normalizeRowKeys(row: Record<string, any>) {
 
 export async function GET(req: NextRequest) {
   try {
-    // use same server but different database
-    const pool = await getPool('GHS_FwApps');
+    // If DB2_* env vars exist, use them for the GHS_FwApps connection
+    // This allows separate credentials for the GHS database on the same or different server.
+    let pool;
+    if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
+      // use DB2_* env vars (prefix DB2)
+      // ensure the DB2_DATABASE is set to GHS_FwApps or pass the database explicitly
+      pool = await getPoolFromEnv('DB2');
+      // if DB2_DATABASE not set but we need GHS_FwApps, fall back to connecting by passing database name
+      if (pool.config && (!pool.config.database || String(pool.config.database).length === 0)) {
+        pool = await getPool('GHS_FwApps');
+      }
+    } else {
+      // default: use existing credentials but target the GHS_FwApps database name
+      pool = await getPool('GHS_FwApps');
+    }
     const result = await pool.request().execute('dbo.Solas_CurrentSeason');
     const rows = result.recordset || [];
 
