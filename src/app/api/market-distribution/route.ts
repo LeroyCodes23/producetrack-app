@@ -18,11 +18,17 @@ export async function GET(req: NextRequest) {
     // Choose DB/pool for GHS Solas proc. Prefer DB2_* env vars (separate credentials).
     const fallbackDb = 'GHS_FwApps';
     let pool;
-    if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
-      pool = await getPoolFromEnv('DB2', fallbackDb);
+    if (process.env.SOLAS_CONN) {
+      pool = await (await import('@/lib/db')).getPoolFromConnectionString(process.env.SOLAS_CONN);
+      console.log('[market-api] using SOLAS_CONN connection string');
+    } else if (process.env.DB2_CONN) {
+      pool = await (await import('@/lib/db')).getPoolFromConnectionString(process.env.DB2_CONN);
+      console.log('[market-api] using DB2_CONN connection string');
+    } else if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
+      pool = await (await import('@/lib/db')).getPoolFromEnvOrConn('DB2', fallbackDb);
       console.log('[market-api] using DB2_* env vars; target DB=', process.env.DB2_DATABASE || fallbackDb);
     } else {
-      pool = await getPool(fallbackDb);
+      pool = await (await import('@/lib/db')).getPoolFromEnvOrConn('DB', fallbackDb);
       console.log('[market-api] using primary credentials; target DB=', fallbackDb);
     }
 

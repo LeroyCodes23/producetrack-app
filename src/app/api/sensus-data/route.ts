@@ -19,13 +19,18 @@ export async function GET(req: NextRequest) {
     if (explicitSensusDb) {
       pool = await getPool(explicitSensusDb);
       console.log('[sensus-api] using explicit SENSUS_DATABASE=', explicitSensusDb);
+    } else if (process.env.SENSUS_CONN) {
+      // explicit connection string for sensus
+      pool = await (await import('@/lib/db')).getPoolFromConnectionString(process.env.SENSUS_CONN);
+      console.log('[sensus-api] using SENSUS_CONN connection string');
     } else if (sensusPrefix) {
       const fallback = process.env.DB_SENSUS_DATABASE || process.env.DB_DATABASE;
-      pool = await getPoolFromEnv(sensusPrefix, fallback);
+      // prefer DB_SENSUS_CONN if present via getPoolFromEnvOrConn
+      pool = await (await import('@/lib/db')).getPoolFromEnvOrConn(sensusPrefix, fallback);
       console.log('[sensus-api] using DB_SENSUS_* env vars; fallback database=', fallback);
     } else {
       const primaryDb = process.env.DB_DATABASE || 'GHC_SBO';
-      pool = await getPool(primaryDb);
+      pool = await (await import('@/lib/db')).getPoolFromEnvOrConn('DB', primaryDb);
       console.log('[sensus-api] using primary DB_DATABASE=', primaryDb);
     }
 

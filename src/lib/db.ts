@@ -11,7 +11,7 @@ const baseConfig: sql.config = {
   },
 };
 
-// cache pools by database name to avoid recreating connections
+// cache pools by a key to avoid recreating connections
 const pools: Record<string, sql.ConnectionPool | undefined> = {};
 
 export async function getPool(database?: string): Promise<sql.ConnectionPool> {
@@ -67,4 +67,33 @@ export async function getPoolFromEnv(prefix = 'DB', fallbackDatabase?: string) {
     pools[dbName] = pool;
     return pool;
   }
+}
+
+// Create or reuse a pool using a raw connection string. Uses the connection string
+// as the cache key so identical strings reuse the same pool.
+export async function getPoolFromConnectionString(connStr: string): Promise<sql.ConnectionPool> {
+  const key = connStr;
+  if (pools[key]) {
+    try {
+      if (pools[key]!.connected) return pools[key]!;
+      await pools[key]!.connect();
+      return pools[key]!;
+    } catch (err) {
+      pools[key] = undefined;
+    }
+  }
+
+  const pool = await sql.connect(connStr);
+  pools[key] = pool;
+  return pool;
+}
+
+// Enhanced env helper: if a connection string env var exists (e.g., DB_CONN or DB2_CONN),
+// it will be used before falling back to host/user/password style vars.
+export async function getPoolFromEnvOrConn(prefix = 'DB', fallbackDatabase?: string) {
+  const connEnv = process.env[`${prefix}_CONN`] ?? process.env['DB_CONN'] ?? '';
+  if (connEnv) {
+    return getPoolFromConnectionString(connEnv);
+  }
+  return getPoolFromEnv(prefix, fallbackDatabase);
 }
