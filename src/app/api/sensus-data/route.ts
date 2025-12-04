@@ -6,24 +6,44 @@ export async function GET(req: NextRequest) {
   // are set in `.env.local`.
   try {
     const { getPool, getPoolFromEnv } = await import('@/lib/db');
-    // explicitly target the primary database configured in .env.local
-    const primaryDb = process.env.DB_DATABASE || 'GHC_SBO';
-    let pool = await getPool(primaryDb);
+    // determine which database to target for the sensus stored procedure
+    // Priority:
+    // 1. explicit SENSUS_DATABASE env var
+    // 2. DB_SENSUS_* env vars (separate credentials)
+    // 3. primary DB (DB_DATABASE)
+    // 4. fallback to GHS_FwApps
+    const explicitSensusDb = process.env.SENSUS_DATABASE;
+    const sensusPrefix = process.env.DB_SENSUS_HOST || process.env.DB_SENSUS_DATABASE ? 'DB_SENSUS' : undefined;
+
+    let pool;
+    if (explicitSensusDb) {
+      pool = await getPool(explicitSensusDb);
+    } else if (sensusPrefix) {
+      pool = await getPoolFromEnv(sensusPrefix, process.env.DB_SENSUS_DATABASE || process.env.DB_DATABASE);
+    } else {
+      const primaryDb = process.env.DB_DATABASE || 'GHC_SBO';
+      pool = await getPool(primaryDb);
+    }
 
     let result;
     try {
       result = await pool.request().execute('dbo.CurrentSensus');
     } catch (err: any) {
-      // If the stored procedure isn't found in the primary DB, try the alternate DB (DB2/GHS_FwApps)
       const msg = String(err?.message || err);
-      if (msg.includes("Could not find stored procedure")) {
-        // attempt fallback to DB2 env vars or GHS_FwApps
-        if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
-          pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
-        } else {
-          pool = await getPool('GHS_FwApps');
+      if (msg.includes('Could not find stored procedure')) {
+        // try DB2 / GHS_FwApps as a final fallback
+        try {
+          if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
+            pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
+          } else {
+            pool = await getPool('GHS_FwApps');
+          }
+          result = await pool.request().execute('dbo.CurrentSensus');
+        } catch (err2: any) {
+          const msg2 = String(err2?.message || err2);
+          // include both attempts in the error to help debugging
+          throw new Error(`Sensus proc not found. Primary error: ${msg}; Fallback error: ${msg2}`);
         }
-        result = await pool.request().execute('dbo.CurrentSensus');
       } else {
         throw err;
       }
