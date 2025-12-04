@@ -29,29 +29,55 @@ export async function GET(req: NextRequest) {
       console.log('[sensus-api] using primary DB_DATABASE=', primaryDb);
     }
 
-    const sensusProc = process.env.SENSUS_PROC || 'dbo.CurrentSensus';
-    let result;
-    try {
-      result = await pool.request().execute(sensusProc);
-    } catch (err: any) {
-      const msg = String(err?.message || err);
-      if (msg.includes('Could not find stored procedure')) {
-        // try DB2 / GHS_FwApps as a final fallback
+    // Try multiple candidate procedure names (allows slight naming differences)
+    const candidates = [
+      process.env.SENSUS_PROC,
+      'dbo.CurrentSensus',
+      'dbo.CurrentSenus',
+      'dbo.Current_Sensus',
+      'CurrentSensus',
+      'CurrentSenus',
+    ].filter(Boolean) as string[];
+
+    let result: any = null;
+    let triedPrimaryErr: string | null = null;
+
+    const tryCandidates = async (p: any) => {
+      for (const procName of candidates) {
         try {
-          if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
-            pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
-          } else {
-            pool = await getPool('GHS_FwApps');
+          console.log('[sensus-api] trying proc:', procName, 'on DB:', (p as any).config?.database || 'unknown');
+          const r = await p.request().execute(procName);
+          console.log('[sensus-api] succeeded with proc:', procName);
+          return r;
+        } catch (e: any) {
+          const m = String(e?.message || e);
+          if (!m.includes('Could not find stored procedure')) {
+            // unexpected error (permissions, runtime) — rethrow immediately
+            throw e;
           }
-          result = await pool.request().execute('dbo.CurrentSensus');
-        } catch (err2: any) {
-          const msg2 = String(err2?.message || err2);
-          // include both attempts in the error to help debugging
-          throw new Error(`Sensus proc not found. Primary error: ${msg}; Fallback error: ${msg2}`);
+          // otherwise continue to next candidate
         }
-      } else {
-        throw err;
       }
+      return null;
+    };
+
+    try {
+      result = await tryCandidates(pool);
+      if (!result) {
+        triedPrimaryErr = 'No candidate proc found in primary DB';
+        // try fallback DB2 / GHS_FwApps
+        if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
+          pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
+        } else {
+          pool = await getPool('GHS_FwApps');
+        }
+        result = await tryCandidates(pool);
+        if (!result) {
+          throw new Error(`Sensus proc not found. Primary: ${triedPrimaryErr}; Fallback: no candidate proc found`);
+        }
+      }
+    } catch (err: any) {
+      throw err;
     }
     return NextResponse.json(result.recordset);
   } catch (err: any) {
