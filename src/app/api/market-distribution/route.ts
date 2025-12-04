@@ -68,10 +68,21 @@ export async function GET(req: NextRequest) {
     if (!result) {
       try {
         console.log('[market-api] searching sys.procedures for Solas/CurrentSeason candidates');
+        // log current DB for diagnostics
+        try {
+          const dbNameRes = await pool.request().query('SELECT DB_NAME() AS currentDb');
+          const currentDb = dbNameRes.recordset?.[0]?.currentDb;
+          console.log('[market-api] connected DB (server reports):', currentDb);
+        } catch (nerr) {
+          console.warn('[market-api] DB_NAME() query failed:', String((nerr as any)?.message || nerr));
+        }
+
         const searchSql = `SELECT SCHEMA_NAME(schema_id) AS schemaName, name FROM sys.procedures WHERE name LIKE '%Solas%' OR name LIKE '%CurrentSeason%'`;
         const searchRes = await pool.request().query(searchSql);
         const procRows = searchRes.recordset || [];
+        console.log('[market-api] sys.procedures search returned', procRows.length, 'rows');
         if (procRows.length > 0) {
+          console.log('[market-api] procedures found:', JSON.stringify(procRows, null, 2));
           const first = procRows[0];
           const qualified = `${first.schemaName}.${first.name}`;
           console.log('[market-api] found candidate proc from sys.procedures:', qualified);
