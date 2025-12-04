@@ -37,12 +37,12 @@ export default sql;
 
 // Create a pool using environment variables with a given prefix.
 // Example: prefix = 'DB2' will read DB2_HOST, DB2_DATABASE, DB2_USER, DB2_PASSWORD, DB2_ENCRYPT, DB2_TRUST_CERT
-export async function getPoolFromEnv(prefix = 'DB') {
+export async function getPoolFromEnv(prefix = 'DB', fallbackDatabase?: string) {
   const env = (key: string) => process.env[`${prefix}_${key}`] ?? process.env[key] ?? '';
 
   const cfg: sql.config = {
     server: env('HOST'),
-    database: env('DATABASE'),
+    database: env('DATABASE') || fallbackDatabase || '',
     user: env('USER'),
     password: env('PASSWORD'),
     options: {

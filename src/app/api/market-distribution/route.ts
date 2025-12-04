@@ -20,12 +20,8 @@ export async function GET(req: NextRequest) {
     let pool;
     if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
       // use DB2_* env vars (prefix DB2)
-      // ensure the DB2_DATABASE is set to GHS_FwApps or pass the database explicitly
-      pool = await getPoolFromEnv('DB2');
-      // if DB2_DATABASE not set but we need GHS_FwApps, fall back to connecting by passing database name
-      if (pool.config && (!pool.config.database || String(pool.config.database).length === 0)) {
-        pool = await getPool('GHS_FwApps');
-      }
+      // pass fallbackDatabase so we connect to GHS_FwApps if DB2_DATABASE is missing
+      pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
     } else {
       // default: use existing credentials but target the GHS_FwApps database name
       pool = await getPool('GHS_FwApps');
