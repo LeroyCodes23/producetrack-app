@@ -13,16 +13,20 @@ export async function GET(req: NextRequest) {
     // 3. primary DB (DB_DATABASE)
     // 4. fallback to GHS_FwApps
     const explicitSensusDb = process.env.SENSUS_DATABASE;
-    const sensusPrefix = process.env.DB_SENSUS_HOST || process.env.DB_SENSUS_DATABASE ? 'DB_SENSUS' : undefined;
+    const sensusPrefix = (process.env.DB_SENSUS_HOST || process.env.DB_SENSUS_DATABASE) ? 'DB_SENSUS' : undefined;
 
     let pool;
     if (explicitSensusDb) {
       pool = await getPool(explicitSensusDb);
+      console.log('[sensus-api] using explicit SENSUS_DATABASE=', explicitSensusDb);
     } else if (sensusPrefix) {
-      pool = await getPoolFromEnv(sensusPrefix, process.env.DB_SENSUS_DATABASE || process.env.DB_DATABASE);
+      const fallback = process.env.DB_SENSUS_DATABASE || process.env.DB_DATABASE;
+      pool = await getPoolFromEnv(sensusPrefix, fallback);
+      console.log('[sensus-api] using DB_SENSUS_* env vars; fallback database=', fallback);
     } else {
       const primaryDb = process.env.DB_DATABASE || 'GHC_SBO';
       pool = await getPool(primaryDb);
+      console.log('[sensus-api] using primary DB_DATABASE=', primaryDb);
     }
 
     let result;
