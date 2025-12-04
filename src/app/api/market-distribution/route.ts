@@ -58,6 +58,24 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // If still not found, try searching sys.procedures for similar names in the connected DB
+    if (!result) {
+      try {
+        console.log('[market-api] searching sys.procedures for Solas/CurrentSeason candidates');
+        const searchSql = `SELECT SCHEMA_NAME(schema_id) AS schemaName, name FROM sys.procedures WHERE name LIKE '%Solas%' OR name LIKE '%CurrentSeason%'`;
+        const searchRes = await pool.request().query(searchSql);
+        const procRows = searchRes.recordset || [];
+        if (procRows.length > 0) {
+          const first = procRows[0];
+          const qualified = `${first.schemaName}.${first.name}`;
+          console.log('[market-api] found candidate proc from sys.procedures:', qualified);
+          result = await pool.request().execute(qualified);
+        }
+      } catch (searchErr: any) {
+        console.warn('[market-api] sys.procedures search failed:', String(searchErr?.message || searchErr));
+      }
+    }
+
     if (!result) {
       throw new Error('Solas proc not found in any candidate names or databases');
     }
