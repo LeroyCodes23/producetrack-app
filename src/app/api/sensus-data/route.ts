@@ -6,7 +6,9 @@ export async function GET(req: NextRequest) {
   // are set in `.env.local`.
   try {
     const { getPool } = await import('@/lib/db');
-    const pool = await getPool();
+    // explicitly target the primary database configured in .env.local
+    const primaryDb = process.env.DB_DATABASE || 'GHC_SBO';
+    const pool = await getPool(primaryDb);
     const result = await pool.request().execute('dbo.CurrentSensus');
     return NextResponse.json(result.recordset);
   } catch (err: any) {
