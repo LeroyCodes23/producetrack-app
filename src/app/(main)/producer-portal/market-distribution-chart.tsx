@@ -28,9 +28,15 @@ export default function MarketDistributionChart() {
     setLoading(true);
     fetch('/api/market-distribution')
       .then((r) => r.json())
-      .then((data: ApiItem[]) => {
+      .then((data: any) => {
         if (!mounted) return;
-        setChartData(data || []);
+        // validate response shape: expect an array of {market, value}
+        if (Array.isArray(data) && data.every(item => item && typeof item.market === 'string' && typeof item.value === 'number')) {
+          setChartData(data as ApiItem[]);
+        } else {
+          console.error('market-distribution: unexpected API response', data);
+          setChartData([]);
+        }
       })
       .catch((err) => {
         console.error('Failed to load market distribution:', err);
@@ -42,7 +48,7 @@ export default function MarketDistributionChart() {
 
   const config = useMemo(() => {
     const cfg: any = { value: { label: 'Value' } };
-    if (chartData) {
+    if (Array.isArray(chartData)) {
       chartData.forEach((d) => { cfg[d.market] = { label: d.market } });
     }
     return cfg as ChartConfig;
