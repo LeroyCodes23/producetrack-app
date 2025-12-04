@@ -33,7 +33,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Try multiple candidate procedure names to tolerate naming differences
-    const candidates = [process.env.SOLAS_PROC, 'dbo.Solas_CurrentSeason', 'Solas_CurrentSeason'].filter(Boolean) as string[];
+    const envProc = process.env.SOLAS_PROC;
+    const candidates = [envProc, 'dbo.Solas_CurrentSeason', 'Solas_CurrentSeason'].filter(Boolean) as string[];
+
+    // allow overriding the target DB for fully-qualified attempts
+    const targetDb = process.env.SOLAS_DB || fallbackDb;
 
     const tryCandidates = async (p: any) => {
       for (const procName of candidates) {
@@ -54,13 +58,42 @@ export async function GET(req: NextRequest) {
       return null;
     };
 
+    // Additionally try fully-qualified proc names (database.schema.proc) via EXEC query
+    const tryFullyQualified = async (p: any) => {
+      for (const procName of candidates) {
+        try {
+          // strip any leading schema if present
+          const short = procName.replace(/^dbo\./i, '');
+          const fq = `${targetDb}.dbo.${short}`;
+          console.log('[market-api] trying fully-qualified proc via EXEC:', fq);
+          const res = await p.request().query(`EXEC ${fq}`);
+          console.log('[market-api] succeeded with fully-qualified proc:', fq);
+          return res;
+        } catch (e: any) {
+          // continue on not-found; rethrow other errors
+          const m = String(e?.message || e);
+          if (!m.toLowerCase().includes('could not find') && !m.toLowerCase().includes('object') && !m.toLowerCase().includes('does not')) {
+            throw e;
+          }
+        }
+      }
+      return null;
+    };
+
     let result = await tryCandidates(pool);
+    if (!result) {
+      // try fully-qualified on the same pool (EXEC database.schema.proc)
+      result = await tryFullyQualified(pool);
+    }
     if (!result) {
       // if we had DB2 envs, also try explicit fallback DB in case the DB name differs
       if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
         pool = await getPool(fallbackDb);
         console.log('[market-api] trying explicit fallback DB=', fallbackDb);
         result = await tryCandidates(pool);
+        if (!result) {
+          result = await tryFullyQualified(pool);
+        }
       }
     }
 

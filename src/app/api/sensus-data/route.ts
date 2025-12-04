@@ -19,15 +19,18 @@ export async function GET(req: NextRequest) {
     if (explicitSensusDb) {
       pool = await getPool(explicitSensusDb);
       console.log('[sensus-api] using explicit SENSUS_DATABASE=', explicitSensusDb);
-    } else if (process.env.SENSUS_CONN) {
-      // explicit connection string for sensus
-      pool = await (await import('@/lib/db')).getPoolFromConnectionString(process.env.SENSUS_CONN);
-      console.log('[sensus-api] using SENSUS_CONN connection string');
     } else if (sensusPrefix) {
       const fallback = process.env.DB_SENSUS_DATABASE || process.env.DB_DATABASE;
       // prefer DB_SENSUS_CONN if present via getPoolFromEnvOrConn
       pool = await (await import('@/lib/db')).getPoolFromEnvOrConn(sensusPrefix, fallback);
       console.log('[sensus-api] using DB_SENSUS_* env vars; fallback database=', fallback);
+    } else if (process.env.SENSUS_CONN) {
+      // explicit connection string for sensus (least-preferred)
+      const connVal = process.env.SENSUS_CONN || '';
+      const m = connVal.match(/Database=([^;]+)/i);
+      if (m) console.log('[sensus-api] SENSUS_CONN reports Database=', m[1]);
+      pool = await (await import('@/lib/db')).getPoolFromConnectionString(connVal);
+      console.log('[sensus-api] using SENSUS_CONN connection string');
     } else {
       const primaryDb = process.env.DB_DATABASE || 'GHC_SBO';
       pool = await (await import('@/lib/db')).getPoolFromEnvOrConn('DB', primaryDb);
@@ -50,12 +53,21 @@ export async function GET(req: NextRequest) {
     const tryCandidates = async (p: any) => {
       for (const procName of candidates) {
         try {
+          try {
+            const dbNameRes = await p.request().query('SELECT DB_NAME() AS currentDb');
+            const currentDb = dbNameRes.recordset?.[0]?.currentDb;
+            console.log('[sensus-api] connected DB (server reports):', currentDb);
+          } catch (nerr) {
+            // ignore
+          }
+
           console.log('[sensus-api] trying proc:', procName, 'on DB:', (p as any).config?.database || 'unknown');
           const r = await p.request().execute(procName);
           console.log('[sensus-api] succeeded with proc:', procName);
           return r;
         } catch (e: any) {
           const m = String(e?.message || e);
+          console.warn('[sensus-api] proc attempt failed:', procName, m);
           if (!m.includes('Could not find stored procedure')) {
             // unexpected error (permissions, runtime) — rethrow immediately
             throw e;
@@ -63,10 +75,44 @@ export async function GET(req: NextRequest) {
           // otherwise continue to next candidate
         }
       }
+
+      // try fully-qualified names via EXEC if candidates failed
+      try {
+        for (const procName of candidates) {
+          try {
+            const short = procName.replace(/^dbo\./i, '');
+            const fq = `${process.env.SENSUS_DATABASE || (pool as any)?.config?.database || 'GHC_SBO'}.dbo.${short}`;
+            console.log('[sensus-api] trying fully-qualified via EXEC:', fq);
+            const res = await pool.request().query(`EXEC ${fq}`);
+            console.log('[sensus-api] succeeded with fully-qualified proc:', fq);
+            return res;
+          } catch (e: any) {
+            console.warn('[sensus-api] fully-qualified attempt failed:', String(e?.message || e));
+            continue;
+          }
+        }
+      } catch (outer) {
+        // ignore
+      }
+
       return null;
     };
 
     try {
+      // verify pool is connected to the expected database; if not, attempt to reconnect to expected DB
+      const expectedDb = process.env.DB_SENSUS_DATABASE || process.env.SENSUS_DATABASE || process.env.DB_DATABASE || 'GHC_SBO';
+      try {
+        const dbNameRes = await pool.request().query('SELECT DB_NAME() AS currentDb');
+        const currentDb = dbNameRes.recordset?.[0]?.currentDb;
+        console.log('[sensus-api] pool initial connected DB:', currentDb, 'expected:', expectedDb);
+        if (expectedDb && currentDb && currentDb.toLowerCase() !== expectedDb.toLowerCase()) {
+          console.log('[sensus-api] connected DB differs from expected — reconnecting to expected DB:', expectedDb);
+          pool = await getPool(expectedDb);
+        }
+      } catch (dbCheckErr) {
+        // ignore and proceed
+      }
+
       result = await tryCandidates(pool);
       if (!result) {
         triedPrimaryErr = 'No candidate proc found in primary DB';
