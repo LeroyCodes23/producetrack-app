@@ -7,9 +7,8 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { SidebarNav } from "./sidebar-nav";
-import { Button } from "../ui/button";
-import { Leaf } from "lucide-react";
 import Link from "next/link";
+import Image from 'next/image';
 import { useAuth } from "@/contexts/auth-context";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 
@@ -20,15 +19,22 @@ export function AppSidebar() {
     <>
         <SidebarHeader>
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="rounded-lg bg-primary text-primary-foreground" asChild>
-                    <Link href={userRole === 'producer' ? '/producer-portal' : '/dashboard'}>
-                        <Leaf />
-                    </Link>
-                </Button>
-                <div>
-                  <span className="font-headline text-lg font-bold">Goede Hoop Citrus</span>
-                  <span className="block text-xs text-sidebar-foreground/70 -mt-1">Powered By ProduceTrack Pro</span>
-                </div>
+                <Link href={userRole === 'producer' ? '/producer-portal' : '/dashboard'} className="flex items-center gap-3">
+                  <div className="h-9 w-9 overflow-hidden rounded-md bg-white/0">
+                    <Image
+                      src={'/Citrusdal_100 Jaar Logo [Final] jpeg.jpg'}
+                      alt="Goede Hoop Citrus"
+                      width={36}
+                      height={36}
+                      style={{ objectFit: 'cover', objectPosition: '50% -15%' }}
+                      priority
+                    />
+                  </div>
+                  <div>
+                    <span className="font-headline text-lg font-bold">Goede Hoop Citrus</span>
+                    <span className="block text-xs text-sidebar-foreground/70 -mt-1">Powered By ProduceTrack Pro</span>
+                  </div>
+                </Link>
             </div>
         </SidebarHeader>
 

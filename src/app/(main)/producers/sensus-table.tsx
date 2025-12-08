@@ -96,6 +96,103 @@ export default function SensusTable() {
     return 'N/A';
   };
 
+  // Export filtered data to CSV (opens in Excel)
+  const exportCsv = (rows: SensusData[]) => {
+    if (!rows || rows.length === 0) return;
+    const headers = [
+      'Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'
+    ];
+    const escape = (v: any) => {
+      if (v === null || v === undefined) return '';
+      const s = String(v).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const lines = [headers.join(',')];
+    for (const r of rows) {
+      const line = [
+        escape(r.FatherCard),
+        escape(r.CardName),
+        escape(r.FarmName),
+        escape(pickField(r, 'Commodity', 'Comm')),
+        escape(pickField(r, 'Cultivar')),
+        escape(pickField(r, 'Variety', 'FruitCode')),
+        escape(r.Orchard),
+        escape(r.PUC),
+        escape(pickField(r, 'BigStatus', 'Big Status')),
+        escape(r.YearPlnt),
+        escape(pickField(r, 'OnderStam', 'Onder Stam')),
+        escape(r.TreeWidth),
+        escape(r.RowWidth),
+        escape(r.TreeCount),
+        escape(r.Ha),
+        escape(r.HaBearing),
+      ].join(',');
+      lines.push(line);
+    }
+
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sensus_export_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // Print a simple HTML table (user can save as PDF via browser print)
+  const printReport = (rows: SensusData[]) => {
+    const cols = ['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'];
+    const tableRows = rows.map(r => `
+      <tr>
+        <td>${r.FatherCard ?? ''}</td>
+        <td>${r.CardName ?? ''}</td>
+        <td>${r.FarmName ?? ''}</td>
+        <td>${pickField(r,'Commodity','Comm')}</td>
+        <td>${pickField(r,'Cultivar')}</td>
+        <td>${pickField(r,'Variety','FruitCode')}</td>
+        <td>${r.Orchard ?? ''}</td>
+        <td>${r.PUC ?? ''}</td>
+        <td>${pickField(r,'BigStatus','Big Status')}</td>
+        <td>${r.YearPlnt ?? ''}</td>
+        <td>${pickField(r,'OnderStam','Onder Stam')}</td>
+        <td>${r.TreeWidth ?? ''}</td>
+        <td>${r.RowWidth ?? ''}</td>
+        <td>${r.TreeCount ?? ''}</td>
+        <td>${r.Ha ?? ''}</td>
+        <td>${r.HaBearing ?? ''}</td>
+      </tr>`).join('\n');
+
+    const html = `
+      <html>
+        <head>
+          <title>Sensus Report</title>
+          <style>table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;font-size:12px}</style>
+        </head>
+        <body>
+          <h2>Sensus Report</h2>
+          <table>
+            <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </body>
+      </html>`;
+
+    const w = window.open('', '_blank');
+    if (!w) {
+      alert('Unable to open print window. Please allow popups for this site.');
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    // delay print to allow render
+    setTimeout(() => { w.print(); }, 500);
+  };
+
   const renderTableContent = () => {
     if (isLoading) {
       return (
@@ -185,10 +282,18 @@ export default function SensusTable() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Button>
+                <div className="flex items-center gap-2">
+                  <Button size="sm">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Sensus Entry
-                </Button>
+                    Add Sensus
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportCsv(filteredData)}>
+                    Export CSV
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => printReport(filteredData)}>
+                    Print PDF
+                  </Button>
+                </div>
             </div>
       </CardHeader>
       <CardContent>
