@@ -138,22 +138,22 @@ export async function GET(req: NextRequest) {
     for (const r of rows) {
       const n = normalizeRowKeys(r);
 
-      // keys: 'solaskg'  and 'targetcountry'
-      const kgRaw = n['solaskg'] ?? n['solaskg'] ?? n['kg'] ?? n['totalkg'];
-      const countryRaw = n['targetcountry'] ?? n['targetmarket'] ?? n['targetregion'] ?? 'Unknown';
+      // keys: 'solaskg' and 'targetregion'
+      const kgRaw = n['solaskg'] ?? n['kg'] ?? n['totalkg'];
+      const regionRaw = n['targetregion'] ?? 'Unknown';
 
       const kg = Number(kgRaw) || 0;
-      const country = String(countryRaw ?? 'Unknown');
+      const region = String(regionRaw ?? 'Unknown');
 
-      const prev = totals.get(country) || 0;
-      totals.set(country, prev + kg);
+      const prev = totals.get(region) || 0;
+      totals.set(region, prev + kg);
       overall += kg;
     }
 
-    const data = Array.from(totals.entries()).map(([market, sumKg]) => {
+    const data = Array.from(totals.entries()).map(([region, sumKg]) => {
       const rounded = Math.round(sumKg * 1000) / 1000; // 3 decimals
       const pct = overall > 0 ? Math.round((rounded / overall) * 10000) / 100 : 0; // 2 decimals
-      return { market, value: rounded, pct };
+      return { region, value: rounded, pct };
     });
 
     // sort descending by value so chart shows largest first

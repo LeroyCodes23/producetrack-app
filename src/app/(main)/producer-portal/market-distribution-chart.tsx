@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pie, PieChart, Cell, Tooltip as ReTooltip, ResponsiveContainer } from "recharts";
 
-type ApiItem = { market: string; value: number; pct?: number };
+type ApiItem = { region: string; value: number; pct?: number };
 
 function generateColor(i: number, n: number) {
   const hue = Math.round((i * 360) / n) % 360;
@@ -22,8 +22,8 @@ export default function MarketDistributionChart() {
       .then((r) => r.json())
       .then((data: any) => {
         if (!mounted) return;
-        // validate response shape: expect an array of {market, value}
-        if (Array.isArray(data) && data.every(item => item && typeof item.market === 'string' && typeof item.value === 'number')) {
+        // Use all regions present in API response
+        if (Array.isArray(data)) {
           setChartData(data as ApiItem[]);
         } else {
           console.error('market-distribution: unexpected API response', data);
@@ -52,7 +52,7 @@ export default function MarketDistributionChart() {
             <Pie
               data={coloredData}
               dataKey="value"
-              nameKey="market"
+              nameKey="region"
               innerRadius="35%"
               strokeWidth={2}
               outerRadius="70%"
@@ -67,12 +67,12 @@ export default function MarketDistributionChart() {
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 w-full overflow-auto max-h-36">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 justify-items-start px-4 text-[11px] md:text-xs">
+      <div className="mt-2 w-full overflow-auto max-h-64">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 justify-items-start px-4 text-[10px] md:text-[11px]">
           {coloredData.map((d) => (
-            <div key={d.market} className="flex items-center gap-2 whitespace-nowrap">
+            <div key={d.region} className="flex items-center gap-2 whitespace-nowrap" title={`${d.region}${d.pct !== undefined ? ` — ${d.pct}%` : ''}`}> 
               <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
-              <span className="truncate">{d.market}{d.pct !== undefined ? ` — ${d.pct}%` : ''}</span>
+              <span className="truncate">{d.region}{d.pct !== undefined ? ` — ${d.pct}%` : ''}</span>
             </div>
           ))}
         </div>
