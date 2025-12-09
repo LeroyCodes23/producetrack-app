@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { PlusCircle, Search } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -96,30 +97,46 @@ export default function SensusTable() {
     return 'N/A';
   };
 
+  // Build a meaningful report title based on current search or rows
+  const getReportTitle = (rows: SensusData[], opts?: { all?: boolean }) => {
+    if (opts?.all) return 'Sensus Report: All Producers';
+    if (!searchTerm) return `Sensus Report`;
+    if (rows.length === 0) return `Sensus Report: '${searchTerm}'`;
+    const firstProducer = rows[0].CardName;
+    if (rows.every(r => r.CardName === firstProducer)) return `Sensus Report: '${firstProducer}'`;
+    const firstFarm = rows[0].FarmName;
+    if (rows.every(r => r.FarmName === firstFarm)) return `Sensus Report: '${firstFarm}'`;
+    return `Sensus Report: '${searchTerm}'`;
+  };
+
   // Export a styled PDF using html2canvas + jsPDF loaded from CDN
-  const exportPdf = async (rows: SensusData[]) => {
-    if (!rows || rows.length === 0) return;
+  // Export PDF, context-aware (all or filtered)
+  const exportPdf = async (rows: SensusData[], opts?: { all?: boolean }) => {
+    // Always use the correct data for full report
+    const dataRows = opts?.all ? sensusData : rows;
+    if (!dataRows || dataRows.length === 0) return;
     const logoUrl = await resolveLogoUrl();
+    const reportTitle = getReportTitle(dataRows, opts);
 
     // build a container for the report
     const container = document.createElement('div');
     container.style.position = 'fixed';
     container.style.left = '-9999px';
     container.style.top = '0';
-    container.style.width = '1200px';
+    container.style.width = '1600px'; // wider for landscape
     container.style.background = '#fff';
     container.innerHTML = `
       <div style="padding:20px;font-family:Arial,Helvetica,sans-serif;color:#000">
         <div style="display:flex;align-items:center;margin-bottom:12px">
           <img src="${logoUrl}" style="height:60px;margin-right:12px" alt="logo" />
-          <h2 style="margin:0">Sensus Report</h2>
+          <h2 style="margin:0">${reportTitle}</h2>
         </div>
         <table style="border-collapse:collapse;width:100%">
           <thead>
-            <tr>${['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'].map(c=>`<th style="border:1px solid #ccc;padding:6px;font-size:12px">${c}</th>`).join('')}</tr>
+            <tr>${['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'].map(c=>`<th style=\"border:1px solid #ccc;padding:6px;font-size:12px\">${c}</th>`).join('')}</tr>
           </thead>
           <tbody>
-            ${rows.map(r=>`<tr>${[
+            ${dataRows.map(r=>`<tr>${[
               r.FatherCard ?? '',
               r.CardName ?? '',
               r.FarmName ?? '',
@@ -136,7 +153,7 @@ export default function SensusTable() {
               r.TreeCount ?? '',
               r.Ha ?? '',
               r.HaBearing ?? ''
-            ].map(cell=>`<td style="border:1px solid #ccc;padding:6px;font-size:12px">${cell}</td>`).join('')}</tr>`).join('')}
+            ].map(cell=>`<td style=\"border:1px solid #ccc;padding:6px;font-size:12px\">${cell}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
       </div>`;
@@ -162,23 +179,43 @@ export default function SensusTable() {
       const { jsPDF } = (window as any).jspdf || (window as any).jspdf || (window as any).jspdf || {};
       if (!html2canvas || !jsPDF) throw new Error('Required libraries not available');
 
-      const canvas = await html2canvas(container, { scale: 2 });
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const pdf = new jsPDF('p', 'pt', 'a4');
+      // Multi-page PDF rendering: slice the table if too tall
+      const pdf = new jsPDF('l', 'pt', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-
+      const margin = 20;
+      const canvas = await html2canvas(container, { scale: 2 });
       const imgProps = { width: canvas.width, height: canvas.height };
-      const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
-      const imgWidth = imgProps.width * ratio;
-      const imgHeight = imgProps.height * ratio;
+      const pageContentHeight = pageHeight - margin * 2;
+      let renderedHeight = 0;
 
-      pdf.addImage(imgData, 'JPEG', 20, 20, imgWidth - 40, imgHeight - 40);
+      while (renderedHeight < imgProps.height) {
+        // Crop the current page slice
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgProps.width;
+        pageCanvas.height = Math.min(pageContentHeight * (imgProps.width / pageWidth), imgProps.height - renderedHeight);
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(
+            canvas,
+            0, renderedHeight,
+            imgProps.width, pageCanvas.height,
+            0, 0,
+            imgProps.width, pageCanvas.height
+          );
+        }
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+        const drawWidth = pageWidth - margin * 2;
+        const drawHeight = pageCanvas.height * (drawWidth / imgProps.width);
+        pdf.addImage(imgData, 'JPEG', margin, margin, drawWidth, drawHeight);
+        renderedHeight += pageCanvas.height;
+        if (renderedHeight < imgProps.height) pdf.addPage();
+      }
       pdf.save(`sensus_export_${new Date().toISOString().slice(0,10)}.pdf`);
     } catch (err) {
       console.error('PDF export failed', err);
       alert('PDF generation failed — falling back to print preview.');
-      printReport(rows);
+      printReport(dataRows);
     } finally {
       container.remove();
     }
@@ -205,10 +242,11 @@ export default function SensusTable() {
     return new URL(candidateLogoPaths[candidateLogoPaths.length - 1], window.location.origin).href;
   };
 
-  const exportCsv = async (rows: SensusData[]) => {
+  // Export CSV, context-aware (all or filtered)
+  const exportCsv = async (rows: SensusData[], opts?: { all?: boolean }) => {
     if (!rows || rows.length === 0) return;
-    // try to resolve a friendly logo URL (may hit existing file in public/)
     const logoUrl = await resolveLogoUrl();
+    const reportTitle = getReportTitle(rows, opts);
     const headers = [
       'Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'
     ];
@@ -218,12 +256,13 @@ export default function SensusTable() {
       return `"${s}"`;
     };
 
-    // First lines: metadata (company, exported by, date, logo URL)
+    // First lines: metadata (report title, company, exported by, date, logo URL)
     const companyName = 'Citrusdal';
     const exportedBy = (window as any).__CURRENT_USER_NAME__ || 'Unknown';
     const exportDate = new Date().toISOString();
 
     const lines = [
+      [escape('Report Title'), escape(reportTitle)].join(','),
       [escape('Company'), escape(companyName)].join(','),
       [escape('Exported By'), escape(exportedBy)].join(','),
       [escape('Export Date'), escape(exportDate)].join(','),
@@ -266,9 +305,11 @@ export default function SensusTable() {
   };
 
   // Print a simple HTML table (user can save as PDF via browser print)
-  const printReport = (rows: SensusData[]) => {
+  // Print PDF, context-aware (all or filtered)
+  const printReport = (rows: SensusData[], opts?: { all?: boolean }) => {
     // keep synchronous print using a resolved URL from the candidate paths
     const logoUrl = new URL(candidateLogoPaths[candidateLogoPaths.length - 1], window.location.origin).href;
+    const reportTitle = getReportTitle(rows, opts);
     const cols = ['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'];
     const tableRows = rows.map(r => `
       <tr>
@@ -292,10 +333,19 @@ export default function SensusTable() {
     const html = `
       <html>
         <head>
-          <title>Sensus Report</title>
+          <title>${reportTitle}</title>
           <style>
+            @media print {
+              @page { size: A4 landscape; margin: 12mm; }
+              html, body { width: 100%; height: 100%; }
+                  table { page-break-inside: auto; }
+                  tr { page-break-inside: avoid; page-break-after: auto; }
+                  thead { display: table-header-group; }
+                  tfoot { display: table-footer-group; }
+            }
+            body{margin:0;padding:8px;font-family:Arial,Helvetica,sans-serif}
             table{border-collapse:collapse;width:100%}
-            td,th{border:1px solid #ccc;padding:6px;font-size:12px}
+            td,th{border:1px solid #ccc;padding:6px;font-size:10px}
             .report-header{display:flex;align-items:center;margin-bottom:12px}
             .report-header img{height:60px;margin-right:12px}
           </style>
@@ -303,7 +353,7 @@ export default function SensusTable() {
         <body>
           <div class="report-header">
             <img src="${logoUrl}" alt="logo" />
-            <h2>Sensus Report</h2>
+            <h2>${reportTitle}</h2>
           </div>
           <table>
             <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
@@ -418,15 +468,42 @@ export default function SensusTable() {
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Sensus
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => exportCsv(filteredData)}>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    if (!searchTerm) {
+                      exportCsv(sensusData, { all: true });
+                    } else {
+                      exportCsv(filteredData);
+                    }
+                  }}>
                     Export CSV
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => printReport(filteredData)}>
-                    Print PDF
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => exportPdf(filteredData)}>
-                    Download PDF
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        Download/Print PDF
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        if (!searchTerm) {
+                          exportPdf(sensusData, { all: true });
+                        } else {
+                          exportPdf(filteredData);
+                        }
+                      }}>
+                        Download PDF
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        if (!searchTerm) {
+                          printReport(sensusData, { all: true });
+                        } else {
+                          printReport(filteredData);
+                        }
+                      }}>
+                        Print PDF
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
             </div>
       </CardHeader>

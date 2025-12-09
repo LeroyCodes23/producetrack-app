@@ -130,32 +130,82 @@ export default function ProducersTable() {
               </div>
               <div className="space-y-4">
                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary"/>Accreditation Details</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-1">
-                      <p className="font-semibold">SIZA Status: <Badge variant={getSizaBadgeVariant(selectedProducer.siza_status)}>{selectedProducer.siza_status || 'N/A'}</Badge></p>
-                      {selectedProducer.siza_exp_date && <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.siza_exp_date}</p>}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-semibold">GlobalG.A.P.</p>
-                      {selectedProducer.globalgap_valid_till ? <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Valid until: {selectedProducer.globalgap_valid_till}</p> : <p className="text-muted-foreground">Not specified</p>}
-                    </div>
-                     <div className="space-y-1">
-                      <p className="font-semibold">{selectedProducer.environmental_type || 'Environmental'}</p>
-                      {selectedProducer.environmental_exp_date ? <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.environmental_exp_date}</p> : <p className="text-muted-foreground">Not specified</p>}
-                    </div>
-                     <div className="space-y-1">
-                      <p className="font-semibold">Albert Heijn</p>
-                      {selectedProducer.albert_heijn_expiry ? <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.albert_heijn_expiry}</p> : <p className="text-muted-foreground">Not specified</p>}
-                    </div>
-                     <div className="space-y-1">
-                      <p className="font-semibold">Tesco Nurture</p>
-                      {selectedProducer.tesco_expiry ? <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.tesco_expiry}</p> : <p className="text-muted-foreground">Not specified</p>}
-                    </div>
-                     <div className="space-y-1">
-                      <p className="font-semibold">LEAF Marque</p>
-                      {selectedProducer.leaf_expiry ? <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.leaf_expiry}</p> : <p className="text-muted-foreground">Not specified</p>}
-                    </div>
-                 </div>
+                 {(() => {
+                   const items: { title: string; body: JSX.Element }[] = [];
+                   // SIZA: show if status or expiry present
+                   if (selectedProducer.siza_status || selectedProducer.siza_exp_date) {
+                     items.push({
+                       title: 'SIZA',
+                       body: (
+                         <>
+                           <div className="flex items-center gap-2">
+                             <Badge variant={getSizaBadgeVariant(selectedProducer.siza_status)}>{selectedProducer.siza_status || 'N/A'}</Badge>
+                           </div>
+                           {selectedProducer.siza_exp_date && <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.siza_exp_date}</p>}
+                         </>
+                       )
+                     });
+                   }
+
+                   // GlobalG.A.P.
+                   if (selectedProducer.globalgap_valid_till) {
+                     items.push({
+                       title: 'GlobalG.A.P.',
+                       body: (
+                         <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Valid until: {selectedProducer.globalgap_valid_till}</p>
+                       )
+                     });
+                   }
+
+                   // Environmental
+                   if (selectedProducer.environmental_type || selectedProducer.environmental_exp_date) {
+                     items.push({
+                       title: selectedProducer.environmental_type || 'Environmental',
+                       body: (
+                         <>{selectedProducer.environmental_exp_date && <p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.environmental_exp_date}</p>}</>
+                       )
+                     });
+                   }
+
+                   // Albert Heijn
+                   if (selectedProducer.albert_heijn_expiry) {
+                     items.push({
+                       title: 'Albert Heijn',
+                       body: (<p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.albert_heijn_expiry}</p>)
+                     });
+                   }
+
+                   // Tesco Nurture
+                   if (selectedProducer.tesco_expiry) {
+                     items.push({
+                       title: 'Tesco Nurture',
+                       body: (<p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.tesco_expiry}</p>)
+                     });
+                   }
+
+                   // LEAF Marque
+                   if (selectedProducer.leaf_expiry) {
+                     items.push({
+                       title: 'LEAF Marque',
+                       body: (<p className="flex items-center gap-1 text-muted-foreground"><CalendarDays className="h-4 w-4" /> Expires: {selectedProducer.leaf_expiry}</p>)
+                     });
+                   }
+
+                   if (items.length === 0) {
+                     return <p className="text-sm text-muted-foreground">No accreditations specified.</p>;
+                   }
+
+                   return (
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                       {items.map((it, idx) => (
+                         <div className="space-y-1" key={idx}>
+                           <p className="font-semibold">{it.title}</p>
+                           {it.body}
+                         </div>
+                       ))}
+                     </div>
+                   );
+                 })()}
               </div>
             </div>
           </DialogContent>
