@@ -32,16 +32,16 @@ const mainNav = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['admin'] },
   { name: "Producer Portal", href: "/producer-portal", icon: Store, roles: ['admin', 'producer'] },
   { name: "Producers", href: "/producers", icon: Users, roles: ['admin'] },
-  { name: "PUC Management", href: "/puc-management", icon: Package, roles: ['admin'] },
-  { name: "Inspections", href: "/inspections", icon: ClipboardCheck, roles: ['admin'] },
-  { name: "Harvests", href: "/harvests", icon: Tractor, roles: ['admin'] },
-  { name: "Packhouse", href: "/packhouse", icon: Warehouse, roles: ['admin'] },
+  { name: "PUC Management", href: "/puc-management", icon: Package, roles: ['admin', 'producer'] },
+  { name: "Inspections", href: "/inspections", icon: ClipboardCheck, roles: ['admin', 'producer'] },
+  { name: "Harvests", href: "/harvests", icon: Tractor, roles: ['admin', 'producer'] },
+  { name: "Packhouse", href: "/packhouse", icon: Warehouse, roles: ['admin', 'producer'] },
 ];
 
 const analysisNav = [
-  { name: "Reports", href: "/reports", icon: BarChart3, roles: ['admin'] },
-  { name: "Size Per Mass", href: "/size-per-mass", icon: Scaling, roles: ['admin'] },
-  { name: "Demand Analysis", href: "/demand-analysis", icon: LineChart, roles: ['admin'] },
+  { name: "Reports", href: "/reports", icon: BarChart3, roles: ['admin', 'producer'] },
+  { name: "Size Per Mass", href: "/size-per-mass", icon: Scaling, roles: ['admin', 'producer'] },
+  { name: "Demand Analysis", href: "/demand-analysis", icon: LineChart, roles: ['admin', 'producer'] },
 ];
 
 const userNav = [
@@ -95,12 +95,21 @@ export function SidebarNav() {
       )}
 
       {userRole === 'producer' && (
-         <SidebarGroup>
+        <>
+          <SidebarGroup>
             <SidebarGroupLabel>Producer</SidebarGroupLabel>
             <SidebarMenu>
               {renderNavItems(mainNav)}
             </SidebarMenu>
-        </SidebarGroup>
+          </SidebarGroup>
+          <SidebarSeparator />
+          <SidebarGroup>
+            <SidebarGroupLabel>Analysis</SidebarGroupLabel>
+            <SidebarMenu>
+              {renderNavItems(analysisNav)}
+            </SidebarMenu>
+          </SidebarGroup>
+        </>
       )}
       
       <div className="flex-grow" />
