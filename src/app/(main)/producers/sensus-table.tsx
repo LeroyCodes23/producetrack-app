@@ -96,9 +96,119 @@ export default function SensusTable() {
     return 'N/A';
   };
 
-  // Export filtered data to CSV (opens in Excel)
-  const exportCsv = (rows: SensusData[]) => {
+  // Export a styled PDF using html2canvas + jsPDF loaded from CDN
+  const exportPdf = async (rows: SensusData[]) => {
     if (!rows || rows.length === 0) return;
+    const logoUrl = await resolveLogoUrl();
+
+    // build a container for the report
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '1200px';
+    container.style.background = '#fff';
+    container.innerHTML = `
+      <div style="padding:20px;font-family:Arial,Helvetica,sans-serif;color:#000">
+        <div style="display:flex;align-items:center;margin-bottom:12px">
+          <img src="${logoUrl}" style="height:60px;margin-right:12px" alt="logo" />
+          <h2 style="margin:0">Sensus Report</h2>
+        </div>
+        <table style="border-collapse:collapse;width:100%">
+          <thead>
+            <tr>${['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'].map(c=>`<th style="border:1px solid #ccc;padding:6px;font-size:12px">${c}</th>`).join('')}</tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>`<tr>${[
+              r.FatherCard ?? '',
+              r.CardName ?? '',
+              r.FarmName ?? '',
+              pickField(r,'Commodity','Comm'),
+              pickField(r,'Cultivar'),
+              pickField(r,'Variety','FruitCode'),
+              r.Orchard ?? '',
+              r.PUC ?? '',
+              pickField(r,'BigStatus','Big Status'),
+              r.YearPlnt ?? '',
+              pickField(r,'OnderStam','Onder Stam'),
+              r.TreeWidth ?? '',
+              r.RowWidth ?? '',
+              r.TreeCount ?? '',
+              r.Ha ?? '',
+              r.HaBearing ?? ''
+            ].map(cell=>`<td style="border:1px solid #ccc;padding:6px;font-size:12px">${cell}</td>`).join('')}</tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+    document.body.appendChild(container);
+
+    const loadScript = (src: string) => new Promise<void>((resolve, reject) => {
+      if ((window as any).html2canvas && (window as any).jspdf) return resolve();
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error(`Failed to load script ${src}`));
+      document.head.appendChild(s);
+    });
+
+    try {
+      // load html2canvas and jspdf UMD bundles from CDN
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+
+      // @ts-ignore
+      const html2canvas = (window as any).html2canvas;
+      // @ts-ignore
+      const { jsPDF } = (window as any).jspdf || (window as any).jspdf || (window as any).jspdf || {};
+      if (!html2canvas || !jsPDF) throw new Error('Required libraries not available');
+
+      const canvas = await html2canvas(container, { scale: 2 });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF('p', 'pt', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgProps = { width: canvas.width, height: canvas.height };
+      const ratio = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+      const imgWidth = imgProps.width * ratio;
+      const imgHeight = imgProps.height * ratio;
+
+      pdf.addImage(imgData, 'JPEG', 20, 20, imgWidth - 40, imgHeight - 40);
+      pdf.save(`sensus_export_${new Date().toISOString().slice(0,10)}.pdf`);
+    } catch (err) {
+      console.error('PDF export failed', err);
+      alert('PDF generation failed — falling back to print preview.');
+      printReport(rows);
+    } finally {
+      container.remove();
+    }
+  };
+
+  // Export filtered data to CSV (opens in Excel)
+  const candidateLogoPaths = [
+    '/logo-citrusdal-100.jpg',
+    '/logo-citrusdal.jpg',
+    '/Citrusdal_100 Jaar Logo [Final] jpeg.jpg'
+  ];
+
+  const resolveLogoUrl = async () => {
+    for (const p of candidateLogoPaths) {
+      try {
+        const url = new URL(p, window.location.origin).href;
+        const res = await fetch(url, { method: 'HEAD' });
+        if (res.ok) return url;
+      } catch (e) {
+        // ignore and try next
+      }
+    }
+    // fallback to first candidate URL
+    return new URL(candidateLogoPaths[candidateLogoPaths.length - 1], window.location.origin).href;
+  };
+
+  const exportCsv = async (rows: SensusData[]) => {
+    if (!rows || rows.length === 0) return;
+    // try to resolve a friendly logo URL (may hit existing file in public/)
+    const logoUrl = await resolveLogoUrl();
     const headers = [
       'Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'
     ];
@@ -108,7 +218,19 @@ export default function SensusTable() {
       return `"${s}"`;
     };
 
-    const lines = [headers.join(',')];
+    // First lines: metadata (company, exported by, date, logo URL)
+    const companyName = 'Citrusdal';
+    const exportedBy = (window as any).__CURRENT_USER_NAME__ || 'Unknown';
+    const exportDate = new Date().toISOString();
+
+    const lines = [
+      [escape('Company'), escape(companyName)].join(','),
+      [escape('Exported By'), escape(exportedBy)].join(','),
+      [escape('Export Date'), escape(exportDate)].join(','),
+      [escape('Logo URL'), escape(logoUrl)].join(','),
+      '', // blank line between metadata and headers
+      headers.join(',')
+    ];
     for (const r of rows) {
       const line = [
         escape(r.FatherCard),
@@ -145,6 +267,8 @@ export default function SensusTable() {
 
   // Print a simple HTML table (user can save as PDF via browser print)
   const printReport = (rows: SensusData[]) => {
+    // keep synchronous print using a resolved URL from the candidate paths
+    const logoUrl = new URL(candidateLogoPaths[candidateLogoPaths.length - 1], window.location.origin).href;
     const cols = ['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'];
     const tableRows = rows.map(r => `
       <tr>
@@ -165,15 +289,22 @@ export default function SensusTable() {
         <td>${r.Ha ?? ''}</td>
         <td>${r.HaBearing ?? ''}</td>
       </tr>`).join('\n');
-
     const html = `
       <html>
         <head>
           <title>Sensus Report</title>
-          <style>table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;font-size:12px}</style>
+          <style>
+            table{border-collapse:collapse;width:100%}
+            td,th{border:1px solid #ccc;padding:6px;font-size:12px}
+            .report-header{display:flex;align-items:center;margin-bottom:12px}
+            .report-header img{height:60px;margin-right:12px}
+          </style>
         </head>
         <body>
-          <h2>Sensus Report</h2>
+          <div class="report-header">
+            <img src="${logoUrl}" alt="logo" />
+            <h2>Sensus Report</h2>
+          </div>
           <table>
             <thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
             <tbody>${tableRows}</tbody>
@@ -189,8 +320,8 @@ export default function SensusTable() {
     w.document.write(html);
     w.document.close();
     w.focus();
-    // delay print to allow render
-    setTimeout(() => { w.print(); }, 500);
+    // delay print to allow render (give image time to load)
+    setTimeout(() => { w.print(); }, 800);
   };
 
   const renderTableContent = () => {
@@ -292,6 +423,9 @@ export default function SensusTable() {
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => printReport(filteredData)}>
                     Print PDF
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => exportPdf(filteredData)}>
+                    Download PDF
                   </Button>
                 </div>
             </div>
