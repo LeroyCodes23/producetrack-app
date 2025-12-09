@@ -53,10 +53,18 @@ export default function LoginPage() {
         <div
             className={`flex items-center justify-center min-h-screen bg-cover bg-center ${styles.container}`}>
             <div className="absolute inset-0 bg-black/50" />
-            <Card className="w-full max-w-sm z-10">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Login</CardTitle>
-                    <CardDescription>
+            <Card
+                className="w-full z-10"
+                style={{ maxWidth: '420px', minWidth: '340px', minHeight: '420px', padding: '0' }}
+            >
+                <CardHeader className="flex flex-col items-center justify-center">
+                    <img
+                        src="/Citrusdal_100 Jaar Logo [Final] jpeg.jpg"
+                        alt="Citrusdal Logo"
+                        style={{ width: '120px', height: 'auto', marginBottom: '4px', display: 'block' }}
+                    />
+                    <CardTitle className="text-2xl text-center">Login</CardTitle>
+                    <CardDescription className="text-center">
                         Enter your email below to login to your account.
                     </CardDescription>
                 </CardHeader>
