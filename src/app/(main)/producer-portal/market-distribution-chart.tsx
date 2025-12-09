@@ -67,15 +67,21 @@ export default function MarketDistributionChart() {
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-2 w-full overflow-auto max-h-64">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 justify-items-start px-4 text-[10px] md:text-[11px]">
-          {coloredData.map((d) => (
-            <div key={d.region} className="flex items-center gap-2 whitespace-nowrap" title={`${d.region}${d.pct !== undefined ? ` — ${d.pct}%` : ''}`}> 
-              <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
-              <span className="truncate">{d.region}{d.pct !== undefined ? ` — ${d.pct}%` : ''}</span>
-            </div>
-          ))}
-        </div>
+      <div
+        className="w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] text-gray-900"
+        style={{ marginTop: '8px', marginBottom: '2mm', maxWidth: '320px' }}
+      >
+        {coloredData.map((d) => (
+          <div
+            key={d.region}
+            className="flex items-center"
+            style={{ minWidth: '60px', maxWidth: '120px', margin: '0 5px', whiteSpace: 'normal' }}
+            title={`${d.region}${d.pct !== undefined ? ` — ${d.pct}%` : ''}`}
+          >
+            <span className="inline-block w-3 h-3 rounded-full mr-1" style={{ backgroundColor: d.color }} />
+            <span>{d.region}{d.pct !== undefined ? ` — ${d.pct}%` : ''}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
