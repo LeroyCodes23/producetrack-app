@@ -54,7 +54,7 @@ export default function MarketDistributionChart() {
               dataKey="value"
               nameKey="region"
               innerRadius="35%"
-              strokeWidth={2}
+              strokeWidth={0}
               outerRadius="70%"
               cx="50%"
               cy="50%"
