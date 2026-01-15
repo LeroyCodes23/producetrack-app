@@ -15,6 +15,11 @@ const PucDemandAnalysisInputSchema = z.object({
     variety: z.string().describe('The variety of the produce from the PUC.'),
     commodity: z.string().describe('The commodity type of the produce.'),
     qualityMetrics: z.string().describe('Key quality metrics for the PUC (e.g., packout, defects).'),
+    accreditations: z.optional(z.array(z.object({
+        id: z.string().describe('Accreditation id e.g. globalgap, siza_ethical'),
+        name: z.string().describe('Human readable accreditation name'),
+        status: z.string().describe('Status or note such as "Valid until 2025-06-01" or "Not held"'),
+    }))).describe('Optional list of accreditations and current status for the PUC (inferred from producer).'),
 });
 export type PucDemandAnalysisInput = z.infer<typeof PucDemandAnalysisInputSchema>;
 
@@ -51,6 +56,7 @@ const prompt = ai.definePrompt({
     - Commodity: {{{commodity}}}
     - Variety: {{{variety}}}
     - Quality Metrics: {{{qualityMetrics}}}
+    - Accreditations: {{{accreditations}}}
 
     Based on this information, provide the following analysis:
 
@@ -60,6 +66,7 @@ const prompt = ai.definePrompt({
         -   Write a brief, insightful assessment of the quality based on the provided metrics, explaining your rating.
     3.  **Global Demand**: Identify 3-4 key global markets for this commodity and variety. For each market, specify the country, the demand level (High, Medium, or Low), and provide brief notes on market preferences, competition, or price points.
     4.  **License Requirements**: List 2-3 crucial or recommended licenses/certifications needed to access these key markets (e.g., GlobalG.A.P., SIZA, FairTrade). For each, state its importance (Crucial, Recommended, Optional) and provide a short detail on why it's needed.
+        - If the producer already holds specific accreditations (provided above), tailor your recommendations to what additional certifications would be required or redundant for the target markets. Mention when an accreditation the producer already holds helps reduce barriers to market access.
     5.  **Recommendations**: Provide a detailed, multi-paragraph set of actionable recommendations for the producer. This should cover suggestions for quality improvement, targeting specific markets, and any other strategies to enhance profitability and demand. Use markdown for formatting.
     `,
 });
