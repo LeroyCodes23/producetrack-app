@@ -284,15 +284,15 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
               <CardTitle>Analytics</CardTitle>
               <CardDescription>A quick overview of your performance.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-around items-center gap-6">
+            <CardContent className="flex-1 flex flex-col items-center gap-12 pt-4">
               <div className="flex flex-col items-center w-full">
-                <h3 className="text-sm font-medium mb-2 text-center">Market Distribution</h3>
+                <h3 className="text-sm font-medium mb-3 text-center">Market Distribution</h3>
                 <div className="w-full max-w-[320px] h-[200px]">
                   <MarketDistributionChart />
                 </div>
               </div>
               <div className="flex flex-col items-center w-full">
-                <h3 className="text-sm font-medium mb-2 text-center">Quality Feedback</h3>
+                <h3 className="text-sm font-medium mb-3 text-center">Quality Feedback</h3>
                 <div className="w-full max-w-[320px] h-[200px]">
                   <QualityFeedbackChart />
                 </div>

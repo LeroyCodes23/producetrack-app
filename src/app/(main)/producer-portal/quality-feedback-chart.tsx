@@ -62,7 +62,7 @@ export default function QualityFeedbackChart() {
           nameKey="feedback"
           innerRadius={32}
           strokeWidth={5}
-          outerRadius={60} // Explicitly set outerRadius to ensure visibility
+          outerRadius={60}
         >
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.color} />

@@ -53,9 +53,9 @@ export default function MarketDistributionChart() {
               data={coloredData}
               dataKey="value"
               nameKey="region"
-              innerRadius="35%"
+              innerRadius={32}
               strokeWidth={0}
-              outerRadius="70%"
+              outerRadius={60}
               cx="50%"
               cy="50%"
             >
@@ -69,7 +69,7 @@ export default function MarketDistributionChart() {
 
       <div
         className="w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] text-gray-900"
-        style={{ marginTop: '8px', marginBottom: '2mm', maxWidth: '320px' }}
+        style={{ marginTop: '12px', paddingBottom: '32px', maxWidth: '320px' }}
       >
         {coloredData.map((d) => (
           <div
