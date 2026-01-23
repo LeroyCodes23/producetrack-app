@@ -68,7 +68,7 @@ export default function MarketDistributionChart() {
       </div>
 
       <div
-        className="w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] text-gray-900"
+        className="w-full flex flex-wrap justify-center items-center gap-x-2 gap-y-1 text-[10px] text-gray-900 dark:text-gray-200"
         style={{ marginTop: '12px', paddingBottom: '32px', maxWidth: '320px' }}
       >
         {coloredData.map((d) => (

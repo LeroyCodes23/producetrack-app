@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -27,17 +27,69 @@ import { Badge } from '@/components/ui/badge';
 export default function ProducersTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducer, setSelectedProducer] = useState<Producer | null>(null);
+  const [sensusMap, setSensusMap] = useState<Record<string, string[]>>({});
+  const [sensusNameMap, setSensusNameMap] = useState<Record<string, string>>({});
+
+  // Normalize keys for matching producer names / ids
+  const normalize = (v?: string | number) => String(v ?? '').trim().toLowerCase();
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchSensus = async () => {
+      try {
+        const res = await fetch('/api/sensus-data');
+        if (!res.ok) return;
+        const data = await res.json();
+        const map: Record<string, Set<string>> = {};
+        const nameMap: Record<string, string> = {};
+        for (const row of data || []) {
+          const puc = (row.PUC || row.puc || row.Puc || '').toString().trim();
+          if (!puc) continue;
+          const keys = [row.CardName, row.FatherCard, row.producerName, row.producerCode];
+          const displayName = String(row.CardName || row.producerName || row.FatherCard || row.producerCode || '').trim();
+          for (const k of keys) {
+            if (!k) continue;
+            const key = normalize(k);
+            map[key] = map[key] || new Set<string>();
+            map[key].add(puc);
+            // record a canonical display name for this key (first-seen)
+            if (displayName && !nameMap[key]) nameMap[key] = displayName;
+          }
+        }
+        if (!mounted) return;
+        const out: Record<string, string[]> = {};
+        for (const k of Object.keys(map)) out[k] = Array.from(map[k]);
+        setSensusMap(out);
+        setSensusNameMap(nameMap);
+      } catch (e) {
+        console.warn('Failed to load sensus data for producers', e);
+      }
+    };
+    fetchSensus();
+    return () => { mounted = false };
+  }, []);
+
+  // Augment the static producers list with PUCs from sensus when available.
+  const producersWithSensus = useMemo(() => {
+    return allProducers.map(p => {
+      const keyName = normalize(p.name);
+      const keyId = normalize(p.id);
+      const sensusPucs = sensusMap[keyName] || sensusMap[keyId];
+      const puc_codes = (sensusPucs && sensusPucs.length > 0) ? Array.from(new Set(sensusPucs.concat(p.puc_codes || []))) : p.puc_codes || [];
+      const displayName = sensusNameMap[keyName] || sensusNameMap[keyId] || p.name;
+      return { ...p, name: displayName, puc_codes, pucCount: puc_codes.length };
+    });
+  }, [sensusMap]);
 
   const filteredProducers = useMemo(() => {
-    if (!searchTerm) {
-      return allProducers;
-    }
-    return allProducers.filter(producer =>
-      producer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (producer.id && producer.id.toString().toLowerCase().includes(searchTerm.toLowerCase())) ||
-      producer.puc_codes.some(puc => puc.toLowerCase().includes(searchTerm.toLowerCase()))
+    if (!searchTerm) return producersWithSensus;
+    const q = searchTerm.toLowerCase();
+    return producersWithSensus.filter(producer =>
+      producer.name.toLowerCase().includes(q) ||
+      (producer.id && producer.id.toString().toLowerCase().includes(q)) ||
+      producer.puc_codes.some(puc => puc.toLowerCase().includes(q))
     );
-  }, [searchTerm]);
+  }, [searchTerm, producersWithSensus]);
 
   const getSizaBadgeVariant = (status?: string) => {
     switch (status?.toLowerCase()) {
