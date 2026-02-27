@@ -26,8 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (storedRole) {
         setUserRole(storedRole);
         setIsAuthenticated(true);
-      } else if (pathname !== '/login') {
-         router.push('/login');
+      } else {
+        // Allow unauthenticated access to login and auth pages
+        const allowed = ['/login', '/login/register', '/login/forgot-password', '/login/reset-password'];
+        if (!allowed.includes(pathname)) {
+          router.push('/login');
+        }
       }
     } catch (error) {
       // localStorage is not available on the server

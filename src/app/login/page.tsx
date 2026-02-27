@@ -104,10 +104,14 @@ export default function LoginPage() {
                         </RadioGroup>
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-2">
                     <Button className="w-full" onClick={handleLogin}>
                         Sign in
                     </Button>
+                    <div className="flex justify-between w-full mt-2">
+                        <a href="/login/register" className="text-sm text-blue-400 hover:underline">Register</a>
+                        <a href="/login/forgot-password" className="text-sm text-blue-400 hover:underline">Forgot Password?</a>
+                    </div>
                 </CardFooter>
             </Card>
         </div>
