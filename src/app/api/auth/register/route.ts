@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate role
-    if (role !== 'Admin' && role !== 'Producer') {
+    if (role !== 'admin' && role !== 'producer') {
       return NextResponse.json(
         { error: 'Role must be either Admin or Producer' }, 
         { status: 400 }

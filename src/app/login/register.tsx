@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function RegisterPage() {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,7 +29,7 @@ export default function RegisterPage() {
         const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, role }),
+            body: JSON.stringify({ email, password, firstName, lastName, role }),
         });
         const data = await res.json();
         if (res.ok) {
@@ -47,6 +49,16 @@ export default function RegisterPage() {
                         <CardDescription className="text-center">Create your account below.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="firstName">First Name</Label>
+                             <Input id="firstName" type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input id="lastName" type="text" required value={lastName} onChange={e => setLastName(e.target.value)} />
+                        </div>
+                        </div>
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" type="email" required value={email} onChange={e => setEmail(e.target.value)} />
