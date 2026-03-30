@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const explicitSensusDb = process.env.SENSUS_DATABASE;
     const sensusPrefix = (process.env.DB_SENSUS_HOST || process.env.DB_SENSUS_DATABASE) ? 'DB_SENSUS' : undefined;
 
-    let pool;
+    let pool: any;
     if (explicitSensusDb) {
       pool = await getPool(explicitSensusDb);
       console.log('[sensus-api] using explicit SENSUS_DATABASE=', explicitSensusDb);
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
 
     try {
       // verify pool is connected to the expected database; if not, attempt to reconnect to expected DB
-      const expectedDb = process.env.DB_SENSUS_DATABASE || process.env.SENSUS_DATABASE || process.env.DB_DATABASE || 'GHC_SBO';
+      const expectedDb = process.env.DB_SENSUS_DATABASE || process.env.SENSUS_DATABASE || process.env.DB_DATABASE || 'ProduceTrack';
       try {
         const dbNameRes = await pool.request().query('SELECT DB_NAME() AS currentDb');
         const currentDb = dbNameRes.recordset?.[0]?.currentDb;
@@ -116,11 +116,11 @@ export async function GET(req: NextRequest) {
       result = await tryCandidates(pool);
       if (!result) {
         triedPrimaryErr = 'No candidate proc found in primary DB';
-        // try fallback DB2 / GHS_FwApps
+        // try fallback DB2 / ProduceTrack
         if (process.env.DB2_HOST || process.env.DB2_DATABASE) {
-          pool = await getPoolFromEnv('DB2', 'GHS_FwApps');
+          pool = await getPoolFromEnv('DB2', 'ProduceTrack');
         } else {
-          pool = await getPool('GHS_FwApps');
+          pool = await getPool('ProduceTrack');
         }
         result = await tryCandidates(pool);
         if (!result) {
