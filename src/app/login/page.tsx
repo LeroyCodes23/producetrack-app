@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,43 +8,64 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import styles from './style.module.css';
-import { useAuth, UserRole } from '@/contexts/auth-context';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<UserRole>('admin');
+    const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
     const { login } = useAuth();
 
-    const handleLogin = () => {
-        let loginSuccessful = false;
+    const handleLogin = async () => {
+        setIsLoading(true);
 
-        if (email === 'admin@example.com' && password === 'password' && role === 'admin') {
-            loginSuccessful = true;
-        } else if (email === 'producer@example.com' && password === 'password1' && role === 'producer') {
-            loginSuccessful = true;
-        }
+        try {
+            console.log('[CLIENT] Attempting login for:', email);
+            
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password }),
+            });
 
-        if (loginSuccessful) {
-            login(role);
+            const data = await response.json();
+            console.log('[CLIENT] Login response status:', response.status);
+            console.log('[CLIENT] Login response data:', data);
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Login failed');
+            }
+
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            console.log('[CLIENT] Token stored, user:', data.user);
+
+            login(data.user.userType === 'Admin' ? 'admin' : 'producer');
+
             toast({
                 title: 'Login Successful',
-                description: 'Welcome back!',
+                description: `Welcome back, ${data.user.firstName || data.user.email}!`,
             });
-            if (role === 'producer') {
-                router.push('/producer-portal');
-            } else {
-                router.push('/dashboard');
-            }
-        } else {
+
+            const redirectPath = data.user.userType === 'Admin' ? '/dashboard' : '/producer-portal';
+            console.log('[CLIENT] Redirecting to:', redirectPath);
+            
+            router.push(redirectPath);
+
+        } catch (err: any) {
+            console.error('[CLIENT] Login error:', err);
             toast({
                 variant: 'destructive',
                 title: 'Login Failed',
-                description: 'Invalid email, password, or role combination.',
+                description: err.message || 'Invalid email or password.',
             });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -65,7 +85,7 @@ export default function LoginPage() {
                     />
                     <CardTitle className="text-2xl text-center">Login</CardTitle>
                     <CardDescription className="text-center">
-                        Enter your email below to login to your account.
+                        Enter your email and password to login to your account.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
@@ -78,6 +98,7 @@ export default function LoginPage() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            disabled={isLoading}
                         />
                     </div>
                     <div className="grid gap-2">
@@ -88,25 +109,18 @@ export default function LoginPage() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            disabled={isLoading}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleLogin();
+                                }
+                            }}
                         />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label>Role</Label>
-                        <RadioGroup value={role} onValueChange={(value: UserRole) => setRole(value)} className="flex gap-4">
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="admin" id="admin" />
-                                <Label htmlFor="admin">Admin</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="producer" id="producer" />
-                                <Label htmlFor="producer">Producer</Label>
-                            </div>
-                        </RadioGroup>
                     </div>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-2">
-                    <Button className="w-full" onClick={handleLogin}>
-                        Sign in
+                    <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
+                        {isLoading ? 'Signing in...' : 'Sign in'}
                     </Button>
                     <div className="flex justify-between w-full mt-2">
                         <a href="/login/register" className="text-sm text-blue-400 hover:underline">Register</a>
