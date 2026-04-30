@@ -374,80 +374,80 @@ export default function SensusTable() {
     setTimeout(() => { w.print(); }, 800);
   };
 
-  const renderTableContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-[60vh]">
-          <p>Loading data...</p>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex justify-center items-center h-[60vh] text-red-500">
-          <p>Error: {error}</p>
-        </div>
-      );
-    }
-
+const renderTableContent = () => {
+  if (isLoading) {
     return (
-      <ScrollArea className="h-[60vh]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Producer Code</TableHead>
-              <TableHead>Producer Name</TableHead>
-              <TableHead>Farm Name</TableHead>
-              <TableHead>Comm</TableHead>
-              <TableHead>Cultivar</TableHead>
-              <TableHead>Variety</TableHead>
-              <TableHead>Orchard</TableHead>
-              <TableHead>PUC</TableHead>
-              <TableHead>Big Status</TableHead>
-              <TableHead>Plant year</TableHead>
-              <TableHead>Onderstam</TableHead>
-              <TableHead>TreeWidth</TableHead>
-              <TableHead>RowWidth</TableHead>
-              <TableHead>Tree Count</TableHead>
-              <TableHead>Sum of Hectares</TableHead>
-              <TableHead>Bearing Ha</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item, index) => (
-                <TableRow key={`${item.PUC}-${item.Orchard}-${index}`}>
-                  <TableCell>{item.FatherCard}</TableCell>
-                  <TableCell>{item.CardName}</TableCell>
-                  <TableCell>{item.FarmName}</TableCell>
-                      <TableCell>{pickField(item, 'Commodity', 'Comm')}</TableCell>
-                      <TableCell>{pickField(item, 'Cultivar')}</TableCell>
-                      <TableCell>{pickField(item, 'Variety', 'FruitCode')}</TableCell>
-                  <TableCell>{item.Orchard}</TableCell>
-                  <TableCell>{item.PUC}</TableCell>
-                      <TableCell>{pickField(item, 'BigStatus', 'Big Status')}</TableCell>
-                      <TableCell>{item.YearPlnt}</TableCell>
-                      <TableCell>{pickField(item, 'OnderStam', 'Onder Stam')}</TableCell>
-                  <TableCell>{item.TreeWidth}</TableCell>
-                  <TableCell>{item.RowWidth}</TableCell>
-                  <TableCell>{item.TreeCount}</TableCell>
-                  <TableCell>{item.Ha}</TableCell>
-                  <TableCell>{item.HaBearing}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={15} className="h-24 text-center text-muted-foreground">
-                  No sensus data available.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+      <div className="flex justify-center items-center h-[60vh]">
+        <p>Loading data...</p>
+      </div>
     );
-  };
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-[60vh] text-red-500">
+        <p>Error: {error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[60vh] overflow-auto relative border rounded-md">
+      <Table className="relative">
+        <TableHeader className="sticky top-0 z-20 bg-background border-b border-border">
+          <TableRow className="">
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Producer Code</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Producer Name</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Farm Name</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Comm</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Cultivar</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Variety</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Orchard</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">PUC</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Big Status</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Plant year</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Onderstam</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">TreeWidth</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">RowWidth</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Tree Count</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Sum of Hectares</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Bearing Ha</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredData.length > 0 ? (
+            filteredData.map((item, index) => (
+              <TableRow key={`${item.PUC}-${item.Orchard}-${index}`}>
+                <TableCell>{item.FatherCard}</TableCell>
+                <TableCell>{item.CardName}</TableCell>
+                <TableCell>{item.FarmName}</TableCell>
+                <TableCell>{pickField(item, 'Commodity', 'Comm')}</TableCell>
+                <TableCell>{pickField(item, 'Cultivar')}</TableCell>
+                <TableCell>{pickField(item, 'Variety', 'FruitCode')}</TableCell>
+                <TableCell>{item.Orchard}</TableCell>
+                <TableCell>{item.PUC}</TableCell>
+                <TableCell>{pickField(item, 'BigStatus', 'Big Status')}</TableCell>
+                <TableCell>{item.YearPlnt}</TableCell>
+                <TableCell>{pickField(item, 'OnderStam', 'Onder Stam')}</TableCell>
+                <TableCell>{item.TreeWidth}</TableCell>
+                <TableCell>{item.RowWidth}</TableCell>
+                <TableCell>{item.TreeCount}</TableCell>
+                <TableCell>{item.Ha}</TableCell>
+                <TableCell>{item.HaBearing}</TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={16} className="h-24 text-center text-muted-foreground">
+                No sensus data available.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
 
   return (
     <Card>

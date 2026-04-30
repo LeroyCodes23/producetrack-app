@@ -49,3 +49,12 @@ firestore-debug.log
 deploy/
 *.zip
 *.tar.gz
+
+# Next.js build output
+.next/
+deploy/.next/
+out/
+
+# Deployment scripts (if generated)
+prepare-deploy.sh
+*.sh
