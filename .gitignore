@@ -10,6 +10,12 @@
 !.yarn/releases
 !.yarn/versions
 
+# Deployment artifacts
+deploy/
+deploy.tar.gz
+deploy.zip
+producetrack-deploy.zip
+
 # testing
 /coverage
 
