@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import styles from './style.module.css';
 import { useAuth } from '@/contexts/auth-context';
+import { signInWithMicrosoft } from './actions';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -85,10 +86,42 @@ export default function LoginPage() {
                     />
                     <CardTitle className="text-2xl text-center">Login</CardTitle>
                     <CardDescription className="text-center">
-                        Enter your email and password to login to your account.
+                        Sign in with your Microsoft account or use your email and password.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                    {/* Microsoft Sign-in Button */}
+                    <form action={signInWithMicrosoft} className="grid gap-2">
+                        <button
+                            type="submit"
+                            className="w-full py-3 px-4 bg-[#0078d4] hover:bg-[#005a9e] text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+                        >
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 23 23"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path fill="#f35325" d="M1 1h10v10H1z" />
+                                <path fill="#81bc06" d="M12 1h10v10H12z" />
+                                <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                                <path fill="#ffba08" d="M12 12h10v10H12z" />
+                            </svg>
+                            Sign in with Microsoft
+                        </button>
+                    </form>
+
+                    {/* Divider */}
+                    <div className="relative my-2">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+                        </div>
+                    </div>
+
+                    {/* Email / Password Form */}
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email</Label>
                         <Input

@@ -1,4 +1,4 @@
-# prepare-deploy.ps1 - FIXED VERSION
+﻿# prepare-deploy.ps1 - FIXED VERSION
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Preparing Ubuntu Deployment Package" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
