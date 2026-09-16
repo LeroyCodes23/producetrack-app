@@ -24,7 +24,7 @@ export default function LoginPage() {
 
         try {
             console.log('[CLIENT] Attempting login for:', email);
-            
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -55,7 +55,7 @@ export default function LoginPage() {
 
             const redirectPath = data.user.userType === 'Admin' ? '/dashboard' : '/producer-portal';
             console.log('[CLIENT] Redirecting to:', redirectPath);
-            
+
             router.push(redirectPath);
 
         } catch (err: any) {
@@ -80,7 +80,7 @@ export default function LoginPage() {
             >
                 <CardHeader className="flex flex-col items-center justify-center">
                     <img
-                        src="/Citrusdal_100 Jaar Logo [Final] jpeg.jpg"
+                        src="/citrusdal-logo.jpg"
                         alt="Citrusdal Logo"
                         style={{ width: '120px', height: 'auto', marginBottom: '4px', display: 'block' }}
                     />
