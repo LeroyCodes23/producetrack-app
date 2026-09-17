@@ -1,7 +1,7 @@
 // src/auth.ts
 import NextAuth from 'next-auth';
-import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
 import sql from 'mssql';
+import { authConfig } from './auth.config';
 
 // ---- DB connection ----
 const dbConfig = {
@@ -19,12 +19,10 @@ const dbConfig = {
 /**
  * Look up a user by email in the Users table.
  * If not found, create them with UserType = 'Producer'.
- * Returns the user's ID, role, name, and email.
  */
 async function findOrCreateUser(email: string, name: string) {
   const pool = await sql.connect(dbConfig);
   try {
-    // 1. Look up existing user
     const result = await pool.request()
       .input('Email', sql.NVarChar, email)
       .query(`
@@ -49,7 +47,7 @@ async function findOrCreateUser(email: string, name: string) {
       };
     }
 
-    // 2. Not found — auto-register as Producer
+    // Auto-register as Producer
     const parts = (name || email).split(' ');
     const firstName = parts[0] || email.split('@')[0];
     const lastName = parts.slice(1).join(' ') || '';
@@ -61,7 +59,7 @@ async function findOrCreateUser(email: string, name: string) {
       .input('FirstName', sql.NVarChar, firstName)
       .input('LastName', sql.NVarChar, lastName)
       .input('UserType', sql.NVarChar, 'Producer')
-      .input('PasswordHash', sql.NVarChar, 'MICROSOFT_AUTH') // placeholder — no password used
+      .input('PasswordHash', sql.NVarChar, 'MICROSOFT_AUTH')
       .query(`
         INSERT INTO Users (Email, Username, FirstName, LastName, UserType, PasswordHash, IsActive, CreatedAt)
         OUTPUT INSERTED.UserID
@@ -83,15 +81,9 @@ async function findOrCreateUser(email: string, name: string) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    MicrosoftEntraID({
-      clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID!,
-      clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET!,
-      issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER!,
-    }),
-  ],
-  session: { strategy: 'jwt' },
+  ...authConfig,
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, account, profile }) {
       // On first login, look up or create the user
       if (account && profile && profile.email) {
@@ -107,7 +99,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.username = dbUser.username;
         } catch (err) {
           console.error('[AUTH] Failed to find/create user:', err);
-          // Don't set userId → session will be unauthenticated
         }
       }
       return token;
@@ -125,9 +116,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-  pages: {
-    signIn: '/login',
-    error: '/login', // Redirect auth errors back to login
-  },
-  trustHost: true,
 });
