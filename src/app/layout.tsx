@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { SessionProvider } from 'next-auth/react';
 
 export const metadata: Metadata = {
   title: 'ProduceTrack',
@@ -24,20 +25,22 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
-          <AuthProvider>
-            {children}
-            <Toaster />
-            <div className="fixed bottom-4 right-4 z-50">
-              <ThemeToggle />
-            </div>
-          </AuthProvider>
-        </ThemeProvider>
+        <SessionProvider>
+          <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+          >
+            <AuthProvider>
+              {children}
+              <Toaster />
+              <div className="fixed bottom-4 right-4 z-50">
+                <ThemeToggle />
+              </div>
+            </AuthProvider>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

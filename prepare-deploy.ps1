@@ -77,7 +77,17 @@ Copy-Item -Path ".next\*" -Destination $destDir -Recurse -Force -Exclude cache
 if (Test-Path public) {
     $publicDest = "deploy\public"
     if (Test-Path $publicDest) { Remove-Item -Path $publicDest -Recurse -Force }
+    New-Item -ItemType Directory -Path $publicDest -Force | Out-Null
     Copy-Item -Path "public\*" -Destination $publicDest -Recurse -Force
+    
+    # Verify the copy worked
+    $publicFiles = (Get-ChildItem $publicDest -File).Count
+    if ($publicFiles -eq 0) {
+        throw "❌ public\ folder is empty after copy. Deployment aborted."
+    }
+    Write-Host "  ✅ Copied $publicFiles files to public\ folder"
+} else {
+    Write-Warning "⚠️ public\ folder not found — skipping"
 }
 
 # Copy package files

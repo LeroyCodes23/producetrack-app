@@ -225,7 +225,7 @@ export default function SensusTable() {
   const candidateLogoPaths = [
     '/logo-citrusdal-100.jpg',
     '/logo-citrusdal.jpg',
-    '/Citrusdal_100 Jaar Logo [Final] jpeg.jpg'
+    '/citrusdal-logo.jpg'
   ];
 
   const resolveLogoUrl = async () => {

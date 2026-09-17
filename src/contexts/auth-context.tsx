@@ -1,91 +1,62 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { createContext, useContext, ReactNode } from 'react';
+import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 
 export type UserRole = 'admin' | 'producer';
 
 export interface AuthUser {
   id: number;
   email: string;
-  username: string;
-  userType: string;
-  firstName: string;
-  lastName: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  userType: 'Admin' | 'Producer';
 }
 
 interface AuthContextType {
   user: AuthUser | null;
   userRole: UserRole | null;
   isAuthenticated: boolean;
-  login: (role: UserRole, user?: AuthUser) => void;
+  isLoading: boolean;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
+  const { data: session, status } = useSession();
 
-  useEffect(() => {
-    try {
-      const storedRole = localStorage.getItem('userRole') as UserRole | null;
-      const storedUser = localStorage.getItem('user');
-      
-      if (storedRole) {
-        setUserRole(storedRole);
-        setIsAuthenticated(true);
+  const user: AuthUser | null = session?.user
+    ? {
+        id: (session.user as any).id,
+        email: session.user.email || '',
+        name: session.user.name || '',
+        firstName: (session.user as any).firstName,
+        lastName: (session.user as any).lastName,
+        username: (session.user as any).username,
+        userType: (session.user as any).userType || 'Producer',
       }
-      
-      if (storedUser) {
-        try {
-          setUser(JSON.parse(storedUser));
-        } catch (e) {
-          console.error('[AUTH] Failed to parse stored user:', e);
-        }
-      }
-      
-      if (!storedRole) {
-        // Allow unauthenticated access to login and auth pages
-        const allowed = ['/login', '/login/register', '/login/forgot-password', '/login/reset-password'];
-        if (!allowed.includes(pathname)) {
-          router.push('/login');
-        }
-      }
-    } catch (error) {
-      // localStorage is not available on the server
-      if (pathname !== '/login') {
-        // do nothing, let the client-side redirect
-      }
-    }
-  }, [pathname, router]);
+    : null;
 
-  const login = (role: UserRole, userData?: AuthUser) => {
-    setUserRole(role);
-    setIsAuthenticated(true);
-    localStorage.setItem('userRole', role);
-    
-    if (userData) {
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    }
-  };
+  const userRole: UserRole | null = user
+    ? user.userType === 'Admin'
+      ? 'admin'
+      : 'producer'
+    : null;
 
   const logout = () => {
-    setUser(null);
-    setUserRole(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    router.push('/login');
+    nextAuthSignOut({ redirectTo: '/login' });
   };
 
-  const value = { user, userRole, isAuthenticated, login, logout };
+  const value = {
+    user,
+    userRole,
+    isAuthenticated: !!user,
+    isLoading: status === 'loading',
+    logout,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
