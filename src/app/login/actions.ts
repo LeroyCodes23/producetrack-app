@@ -3,5 +3,5 @@
 import { signIn } from '@/auth';
 
 export async function signInWithMicrosoft() {
-  await signIn('microsoft-entra-id', { redirectTo: '/producer-portal' });
+  await signIn('microsoft-entra-id', { redirectTo: '/' });
 }

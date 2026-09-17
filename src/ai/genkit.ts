@@ -1,6 +1,6 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import {dev} from 'node:process';
+const dev = process.env.NODE_ENV === 'development';
 
 if (!dev && !process.env.GEMINI_API_KEY) {
   throw new Error(

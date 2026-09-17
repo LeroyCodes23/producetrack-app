@@ -44,9 +44,8 @@ export default function DashboardPage() {
     },
     xAxis: {
       dataKey: "date",
-    }
-  } satisfies ChartConfig;
-
+    },
+  } as ChartConfig;
 
   return (
     <div className="space-y-4">
