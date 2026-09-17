@@ -3,7 +3,7 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
 
-export type UserRole = 'admin' | 'producer';
+export type UserRole = 'admin' | 'employee' | 'producer';
 
 export interface AuthUser {
   id: number;
@@ -12,7 +12,8 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   username?: string;
-  userType: 'Admin' | 'Producer';
+  userType: 'Admin' | 'Employee' | 'Producer';
+  clientNumber?: string | null;
 }
 
 interface AuthContextType {
@@ -37,13 +38,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastName: (session.user as any).lastName,
         username: (session.user as any).username,
         userType: (session.user as any).userType || 'Producer',
+        clientNumber: (session.user as any).clientNumber || null,
       }
     : null;
 
   const userRole: UserRole | null = user
     ? user.userType === 'Admin'
       ? 'admin'
-      : 'producer'
+      : user.userType === 'Employee'
+        ? 'employee'
+        : 'producer'
     : null;
 
   const logout = () => {

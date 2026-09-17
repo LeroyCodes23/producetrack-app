@@ -4,25 +4,27 @@ import MicrosoftEntraID from 'next-auth/providers/microsoft-entra-id';
 
 // ---- Azure AD group IDs (from Azure) ----
 const ADMIN_GROUP_ID = process.env.AUTH_ADMIN_GROUP_ID;
+const EMPLOYEE_GROUP_ID = process.env.AUTH_EMPLOYEE_GROUP_ID;
+const PRODUCER_GROUP_ID = process.env.AUTH_PRODUCER_GROUP_ID;
 
-/**
- * Determine role from the Azure AD roles claim.
- * Edge-safe — no Node modules needed.
- */
-function determineRole(roles: string[] | undefined): 'Admin' | 'Producer' {
-  if (!roles || !Array.isArray(roles)) {
-    return 'Producer';
-  }
-  if (ADMIN_GROUP_ID && roles.includes(ADMIN_GROUP_ID)) {
-    return 'Admin';
-  }
-  return 'Producer';
+export type UserType = 'Admin' | 'Employee' | 'Producer';
+
+function determineRole(
+  roles: string[] | undefined,
+  email: string | undefined
+): UserType | null {
+  if (ADMIN_GROUP_ID && roles?.includes(ADMIN_GROUP_ID)) return 'Admin';
+  if (EMPLOYEE_GROUP_ID && roles?.includes(EMPLOYEE_GROUP_ID)) return 'Employee';
+  if (email && /^\d+@/i.test(email)) return 'Producer';
+  return null;
 }
 
-/**
- * Edge-safe Auth.js configuration.
- * Used by middleware, which runs in the Edge Runtime.
- */
+function extractClientNumber(email: string | undefined): string | null {
+  if (!email) return null;
+  const match = email.match(/^(\d+)@/i);
+  return match ? match[1] : null;
+}
+
 export const authConfig = {
   providers: [
     MicrosoftEntraID({
@@ -37,12 +39,41 @@ export const authConfig = {
     error: '/login',
   },
   trustHost: true,
+
+  // ==================== TEMP DEBUG EVENTS ====================
+  events: {
+    async signIn({ user, account, profile }) {
+      console.error('========== SIGN IN EVENT ==========');
+      console.error('user.email:', user?.email);
+      console.error('profile.email:', (profile as any)?.email);
+      console.error('profile.preferred_username:', (profile as any)?.preferred_username);
+      console.error('profile.upn:', (profile as any)?.upn);
+      console.error('profile.roles:', JSON.stringify((profile as any)?.roles));
+      console.error('====================================');
+    },
+  },
+  // ==================== END TEMP DEBUG ====================
+
   callbacks: {
-    // ---- JWT callback (edge-safe) ----
     async jwt({ token, account, profile }) {
-      // On first login, populate token from Microsoft profile
       if (account && profile) {
-        const email = (profile as any).email as string | undefined;
+        // ==================== TEMP DEBUG ====================
+        console.error('========== JWT DEBUG ==========');
+        console.error('profile.email:', JSON.stringify((profile as any).email));
+        console.error('profile.preferred_username:', (profile as any).preferred_username);
+        console.error('profile.upn:', (profile as any).upn);
+        console.error('profile.roles:', JSON.stringify((profile as any).roles));
+        console.error('ADMIN_GROUP_ID:', ADMIN_GROUP_ID);
+        console.error('EMPLOYEE_GROUP_ID:', EMPLOYEE_GROUP_ID);
+        console.error('email regex match:', /^\d+@/i.test((profile as any).email || ''));
+        console.error('determineRole result:', determineRole((profile as any).roles, (profile as any).email));
+        console.error('==============================');
+        // ==================== END TEMP DEBUG ====================
+
+        const email = 
+          ((profile as any).email as string | undefined) ||
+          ((profile as any).preferred_username as string | undefined) ||
+          ((profile as any).upn as string | undefined);
         const name = (profile as any).name as string | undefined;
         const roles = (profile as any).roles as string[] | undefined;
 
@@ -50,11 +81,14 @@ export const authConfig = {
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
         const username = email ? email.split('@')[0].toLowerCase() : '';
-        const userType = determineRole(roles);
+
+        const userType = determineRole(roles, email);
+        const clientNumber = userType === 'Producer' ? extractClientNumber(email) : null;
 
         token.email = email;
         token.name = name;
         (token as any).userType = userType;
+        (token as any).clientNumber = clientNumber;
         (token as any).firstName = firstName;
         (token as any).lastName = lastName;
         (token as any).username = username;
@@ -63,10 +97,10 @@ export const authConfig = {
       return token;
     },
 
-    // ---- Session callback (edge-safe) ----
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).userType = (token as any).userType || 'Producer';
+        (session.user as any).userType = (token as any).userType || null;
+        (session.user as any).clientNumber = (token as any).clientNumber || null;
         (session.user as any).firstName = (token as any).firstName;
         (session.user as any).lastName = (token as any).lastName;
         (session.user as any).username = (token as any).username;
@@ -77,42 +111,37 @@ export const authConfig = {
       return session;
     },
 
-    // ---- Authorized callback for middleware ----
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const { pathname } = nextUrl;
+      const userType = (auth?.user as any)?.userType as UserType | null | undefined;
+
       const isOnLogin = pathname.startsWith('/login');
       const isOnApiAuth = pathname.startsWith('/api/auth');
-      const isPublic = isOnLogin || isOnApiAuth;
+      const isOnApiHealth = pathname.startsWith('/api/health');
+      const isOnNoAccess = pathname.startsWith('/no-access');
+      const isPublic = isOnLogin || isOnApiAuth || isOnApiHealth || isOnNoAccess;
 
       if (isPublic) {
-        // If already logged in and hitting /login, redirect to their home
-        if (isLoggedIn && isOnLogin) {
-          const userType = (auth?.user as any)?.userType as string | undefined;
-          const redirectTo = userType === 'Admin' ? '/dashboard' : '/producer-portal';
+        if (isLoggedIn && userType && isOnLogin) {
+          const redirectTo = userType === 'Producer' ? '/producer-portal' : '/dashboard';
           return Response.redirect(new URL(redirectTo, nextUrl));
         }
         return true;
       }
 
-      // Not public and not logged in → redirect to login
       if (!isLoggedIn) {
         return false;
       }
 
-      // Role-based checks
-      const userType = (auth?.user as any)?.userType as string | undefined;
-      const isOnDashboard = pathname.startsWith('/dashboard');
-      const isOnProducerPortal = pathname.startsWith('/producer-portal');
-
-      // Admin-only: /dashboard
-      if (isOnDashboard && userType !== 'Admin') {
-        return Response.redirect(new URL('/producer-portal', nextUrl));
+      if (!userType) {
+        return Response.redirect(new URL('/no-access', nextUrl));
       }
 
-      // Producer-only: /producer-portal (Admins can also access if needed, allow both)
-      if (isOnProducerPortal && !userType) {
-        return Response.redirect(new URL('/login', nextUrl));
+      const isOnDashboard = pathname.startsWith('/dashboard');
+
+      if (isOnDashboard && userType === 'Producer') {
+        return Response.redirect(new URL('/producer-portal', nextUrl));
       }
 
       return true;
