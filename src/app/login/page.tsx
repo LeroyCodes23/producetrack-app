@@ -46,7 +46,17 @@ export default function LoginPage() {
 
             console.log('[CLIENT] Token stored, user:', data.user);
 
-            login(data.user.userType === 'Admin' ? 'admin' : 'producer');
+            login(
+                data.user.userType === 'Admin' ? 'admin' : 'producer',
+                {
+                    id: data.user.id,
+                    email: data.user.email,
+                    username: data.user.username,
+                    userType: data.user.userType,
+                    firstName: data.user.firstName,
+                    lastName: data.user.lastName,
+                }
+            );
 
             toast({
                 title: 'Login Successful',

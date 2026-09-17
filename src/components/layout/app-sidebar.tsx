@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -13,8 +12,28 @@ import { useAuth } from "@/contexts/auth-context";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 
 export function AppSidebar() {
-  const { userRole } = useAuth();
-  
+  const { user, userRole } = useAuth();
+
+  // Build display name: firstName + lastName, fallback to username or email
+  const displayName = user
+    ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email
+    : userRole === 'admin'
+      ? 'Admin User'
+      : 'Producer User';
+
+  // Display email
+  const displayEmail = user?.email || (userRole === 'admin' ? 'admin@example.com' : 'producer@example.com');
+
+  // Initials for avatar
+  const initials = user
+    ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email[0].toUpperCase()
+    : userRole === 'admin'
+      ? 'A'
+      : 'P';
+
+  // Role label
+  const roleLabel = user?.userType || (userRole === 'admin' ? 'Admin' : 'Producer');
+
   return (
     <>
         <SidebarHeader>
@@ -22,7 +41,7 @@ export function AppSidebar() {
                 <Link href={userRole === 'producer' ? '/producer-portal' : '/dashboard'} className="flex items-center gap-3">
                   <div className="h-9 w-9 overflow-hidden rounded-md bg-white/0">
                     <Image
-                      src={'/Citrusdal_100 Jaar Logo [Final] jpeg.jpg'}
+                      src='/citrusdal-logo.jpg'
                       alt="Goede Hoop Citrus"
                       width={36}
                       height={36}
@@ -48,14 +67,17 @@ export function AppSidebar() {
         <SidebarFooter>
              <div className="flex items-center gap-3 p-2">
                 <Avatar className="h-9 w-9">
-                    <AvatarFallback>{userRole === 'admin' ? 'A' : 'P'}</AvatarFallback>
+                    <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col group-data-[collapsible=icon]:hidden">
                     <span className="text-sm font-medium text-sidebar-foreground">
-                        {userRole === 'admin' ? 'Admin User' : 'Producer User'}
+                        {displayName}
                     </span>
                     <span className="text-xs text-sidebar-foreground/70">
-                         {userRole === 'admin' ? 'admin@example.com' : 'producer@example.com'}
+                        {displayEmail}
+                    </span>
+                    <span className="text-xs text-sidebar-foreground/50">
+                        {roleLabel}
                     </span>
                 </div>
             </div>
