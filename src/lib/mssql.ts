@@ -1,9 +1,14 @@
 import sql from 'mssql';
 
+const server = process.env.DB_HOST;
+if (!server) {
+  throw new Error('DB_HOST is not set. Check your .env.local');
+}
+
 const config: sql.config = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER || 'CITRUSTEST',
+  server,
   database: process.env.DB_DATABASE || 'ProduceTrack',
   options: {
     encrypt: true,
@@ -43,6 +48,26 @@ export async function executeStoredProcedure(
     return result;  // Return the full IProcedureResult
   } catch (error) {
     console.error(`Error executing ${procedureName}:`, error);
+    throw error;
+  }
+}
+
+export async function executeQuery<T = any>(
+  query: string,
+  params: Record<string, any> = {}
+): Promise<T[]> {
+  try {
+    const pool = await getConnection();
+    const request = pool.request();
+
+    Object.entries(params).forEach(([key, value]) => {
+      request.input(key, value);
+    });
+
+    const result = await request.query(query);
+    return result.recordset as T[];
+  } catch (error) {
+    console.error('Error executing query:', error);
     throw error;
   }
 }

@@ -71,7 +71,7 @@ export type Grade = {
 }
 
 export type JourneyBin = {
-    PUC: string;
+  Orchard: string;
     RunDate: string;
     RunPackhouse: string;
     PACKHOUSE: string;

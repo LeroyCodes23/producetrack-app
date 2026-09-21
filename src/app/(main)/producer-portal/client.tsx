@@ -335,7 +335,7 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
               <Table className="table-fixed w-full">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>PUC</TableHead>
+                      <TableHead>Orchard</TableHead>
                     <TableHead>Packhouse</TableHead>
                     <TableHead>Cultivar</TableHead>
                     <TableHead>Variety</TableHead>
@@ -345,9 +345,9 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
                 </TableHeader>
                 <TableBody>
                   {Array.isArray(journeyBins) && journeyBins.length > 0 ? (
-                    journeyBins.slice(0, 10).map((bin, index) => (
+                    journeyBins.map((bin, index) => (
                       <TableRow key={index}>
-                        <TableCell>{bin.PUC}</TableCell>
+                        <TableCell>{bin.Orchard}</TableCell>
                         <TableCell>{bin.PACKHOUSE}</TableCell>
                         <TableCell>{bin.Cultivar}</TableCell>
                         <TableCell>{bin.Variety}</TableCell>

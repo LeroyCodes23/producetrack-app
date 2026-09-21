@@ -1,11 +1,34 @@
 
-import { journeyBins, palletJourney } from "@/lib/data";
+import { headers } from "next/headers";
+import { auth } from "@/auth";
 import ProducerPortalClient from "./client";
 
-export default function ProducerPortalPage() {
-  // Fetch data in the Server Component
-  const binData = journeyBins;
-  const palletData = palletJourney;
+async function getBinRegisterData() {
+    try {
+        const headersList = await headers();
+        const cookieHeader = headersList.get("cookie") || "";
+        const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
+
+        const res = await fetch(`${baseUrl}/api/bin-register`, {
+            headers: { cookie: cookieHeader },
+            cache: "no-store",
+        });
+
+        if (!res.ok) {
+            console.error("Failed to fetch bin register:", await res.text());
+            return [];
+        }
+
+        const json = await res.json();
+        return json.data || [];
+    } catch (err) {
+        console.error("Error fetching bin register:", err);
+        return [];
+    }
+}
+
+export default async function ProducerPortalPage() {
+    const binData = await getBinRegisterData();
 
   return (
     <div className="space-y-4">
@@ -18,7 +41,6 @@ export default function ProducerPortalPage() {
                 filter: 'blur(1px)',
                 maskImage: 'radial-gradient(circle at center, black 0%, transparent 98%)',
                 WebkitMaskImage: 'radial-gradient(circle at center, black 0%, transparent 98%)',
-  
             }}
         />
         <div className="relative z-10 space-y-4">
@@ -28,8 +50,7 @@ export default function ProducerPortalPage() {
                 Track your produce from farm to destination.
                 </p>
             </div>
-            {/* Pass the fetched data as props to the Client Component */}
-            <ProducerPortalClient journeyBins={binData} palletJourney={palletData} />
+            <ProducerPortalClient journeyBins={binData} palletJourney={[]} />
         </div>
     </div>
   );
