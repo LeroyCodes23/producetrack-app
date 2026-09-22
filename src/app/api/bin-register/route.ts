@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { executeQuery } from '@/lib/mssql';
 
@@ -13,7 +13,11 @@ interface BinRegisterRow {
   RunPackhouse: number | null;
 }
 
-export async function GET() {
+interface SeasonRow {
+  SEASON: string | null;
+}
+
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session) {
@@ -27,15 +31,28 @@ export async function GET() {
       return NextResponse.json({ error: 'No role assigned' }, { status: 403 });
     }
 
+    let season = request.nextUrl.searchParams.get('season');
+    if (!season) {
+      const seasonRows = await executeQuery<SeasonRow>(`
+        SELECT MAX(SEASON) AS SEASON
+        FROM dbo.vBinRegister
+      `);
+      season = seasonRows[0]?.SEASON ?? null;
+    }
+
+    if (!season) {
+      return NextResponse.json({ data: [] });
+    }
+
     let rows: BinRegisterRow[];
 
     if (userType === 'Admin' || userType === 'Employee') {
       rows = await executeQuery<BinRegisterRow>(`
         SELECT Orchard, PACKHOUSE, Cultivar, Variety, Bins, BinsKG, RunDate, RunPackhouse
         FROM dbo.vBinRegister
-        WHERE SEASON = (SELECT MAX(SEASON) FROM dbo.vBinRegister)
+        WHERE SEASON = @season
         ORDER BY RunDate DESC, Orchard, PACKHOUSE
-      `);
+      `, { season });
     } else if (userType === 'Producer') {
       if (!clientNumber) {
         return NextResponse.json({ error: 'No client number found' }, { status: 403 });
@@ -46,10 +63,10 @@ export async function GET() {
         SELECT Orchard, PACKHOUSE, Cultivar, Variety, Bins, BinsKG, RunDate, RunPackhouse
         FROM dbo.vBinRegister
         WHERE CLIENT = @clientNumber
-          AND SEASON = (SELECT MAX(SEASON) FROM dbo.vBinRegister)
+          AND SEASON = @season
         ORDER BY RunDate DESC, Orchard, PACKHOUSE
       `,
-        { clientNumber }
+        { clientNumber, season }
       );
     } else {
       return NextResponse.json({ error: 'No role assigned' }, { status: 403 });

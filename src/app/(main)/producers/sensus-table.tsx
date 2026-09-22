@@ -223,9 +223,7 @@ export default function SensusTable() {
 
   // Export filtered data to CSV (opens in Excel)
   const candidateLogoPaths = [
-    '/logo-citrusdal-100.jpg',
-    '/logo-citrusdal.jpg',
-    '/citrusdal-logo.jpg'
+    '/Citrusdal_Dark.png'
   ];
 
   const resolveLogoUrl = async () => {

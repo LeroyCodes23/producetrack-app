@@ -11,9 +11,16 @@ export default function LoginPage() {
       <Card className="w-full z-10" style={{ maxWidth: '420px', minWidth: '340px', padding: '0' }}>
         <CardHeader className="flex flex-col items-center justify-center">
           <img
-            src="/citrusdal-logo.jpg"
+            src="/Citrusdal_Light.png"
             alt="Citrusdal Logo"
-            style={{ width: '120px', height: 'auto', marginBottom: '4px', display: 'block' }}
+            className="dark:hidden"
+            style={{ width: '120px', height: 'auto', marginBottom: '4px' }}
+          />
+          <img
+            src="/Citrusdal_Dark.png"
+            alt="Citrusdal Logo"
+            className="hidden dark:block"
+            style={{ width: '120px', height: 'auto', marginBottom: '4px' }}
           />
           <CardTitle className="text-2xl text-center">Login</CardTitle>
           <CardDescription className="text-center">

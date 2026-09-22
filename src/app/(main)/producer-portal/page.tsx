@@ -3,13 +3,14 @@ import { headers } from "next/headers";
 import { auth } from "@/auth";
 import ProducerPortalClient from "./client";
 
-async function getBinRegisterData() {
+async function getBinRegisterData(season?: string) {
     try {
         const headersList = await headers();
         const cookieHeader = headersList.get("cookie") || "";
         const baseUrl = process.env.AUTH_URL || "http://localhost:3000";
 
-        const res = await fetch(`${baseUrl}/api/bin-register`, {
+        const seasonQuery = season ? `?season=${encodeURIComponent(season)}` : "";
+        const res = await fetch(`${baseUrl}/api/bin-register${seasonQuery}`, {
             headers: { cookie: cookieHeader },
             cache: "no-store",
         });
@@ -27,8 +28,14 @@ async function getBinRegisterData() {
     }
 }
 
-export default async function ProducerPortalPage() {
-    const binData = await getBinRegisterData();
+export default async function ProducerPortalPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ season?: string | string[] }>;
+}) {
+    const { season: seasonParam } = await searchParams;
+    const season = Array.isArray(seasonParam) ? seasonParam[0] : seasonParam;
+    const binData = await getBinRegisterData(season);
 
   return (
     <div className="space-y-4">
@@ -50,7 +57,7 @@ export default async function ProducerPortalPage() {
                 Track your produce from farm to destination.
                 </p>
             </div>
-            <ProducerPortalClient journeyBins={binData} palletJourney={[]} />
+            <ProducerPortalClient journeyBins={binData} palletJourney={[]} season={season} />
         </div>
     </div>
   );

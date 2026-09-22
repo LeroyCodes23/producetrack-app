@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { JourneyBin, PalletJourney } from "@/lib/types";
 import {
   Card,
@@ -26,20 +27,25 @@ import {
   Box,
   Package,
   MessageSquare,
+  Search,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MarketDistributionChart from "./market-distribution-chart";
 import QualityFeedbackChart from "./quality-feedback-chart";
 import VarietyPerformanceChart from "./variety-performance-chart";
+import BinDetailDrawer from "./bin-detail-drawer";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface ProducerPortalClientProps {
   journeyBins: JourneyBin[];
   palletJourney: PalletJourney[];
+  season?: string;
 }
 
-export default function ProducerPortalClient({ journeyBins, palletJourney }: ProducerPortalClientProps) {
+export default function ProducerPortalClient({ journeyBins, palletJourney, season }: ProducerPortalClientProps) {
   const stats = [
     { title: "Bins Harvested (To Date)", value: "1,204" },
     { title: "Pallets Packed (To Date)", value: "150" },
@@ -74,7 +80,43 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
   const intervalRef = useRef<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [tileWidth, setTileWidth] = useState<number>(220); // default tile width
+  const [binSearchTerm, setBinSearchTerm] = useState("");
+  const [seasons, setSeasons] = useState<string[]>([]);
+  const [selectedRow, setSelectedRow] = useState<JourneyBin | null>(null);
   const GAP = 16; // gap in px (matches gap-4)
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedSeason = season ?? seasons[0];
+
+  const normalizedBinSearchTerm = binSearchTerm.trim().toLowerCase();
+  const filteredJourneyBins = journeyBins.filter((bin) =>
+    [bin.Orchard, bin.Cultivar, bin.PACKHOUSE, bin.Variety].some((value) =>
+      value.toLowerCase().includes(normalizedBinSearchTerm)
+    )
+  );
+
+  useEffect(() => {
+    const loadSeasons = async () => {
+      try {
+        const response = await fetch('/api/seasons', { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const json = await response.json();
+        setSeasons(Array.isArray(json.data) ? json.data : []);
+      } catch (error) {
+        console.error('Failed to fetch seasons:', error);
+      }
+    };
+
+    loadSeasons();
+  }, []);
+
+  const handleSeasonChange = (value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('season', value);
+    router.push(`${pathname}?${params.toString()}`);
+  };
 
   // measure tile width (first tile) and update on resize
   useEffect(() => {
@@ -313,21 +355,45 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
                   Track individual bins from the orchard to the packhouse.
                   Click a row to see its journey.
                 </CardDescription>
+                <div className="relative mt-4 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="Search orchard, cultivar, packhouse, or variety..."
+                    className="pl-9"
+                    value={binSearchTerm}
+                    onChange={(event) => setBinSearchTerm(event.target.value)}
+                  />
+                </div>
               </div>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Notify Producer
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Notify Producer</DialogTitle>
-                  </DialogHeader>
-                  <p>This is where the notification form will go.</p>
-                </DialogContent>
-              </Dialog>
+              <div className="flex items-center gap-2">
+                <Select value={selectedSeason} onValueChange={handleSeasonChange}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Select season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((availableSeason) => (
+                      <SelectItem key={availableSeason} value={availableSeason}>
+                        {availableSeason}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Notify Producer
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Notify Producer</DialogTitle>
+                    </DialogHeader>
+                    <p>This is where the notification form will go.</p>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -344,9 +410,13 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array.isArray(journeyBins) && journeyBins.length > 0 ? (
-                    journeyBins.map((bin, index) => (
-                      <TableRow key={index}>
+                  {filteredJourneyBins.length > 0 ? (
+                    filteredJourneyBins.map((bin, index) => (
+                      <TableRow
+                        key={index}
+                        onClick={() => setSelectedRow(bin)}
+                        className="cursor-pointer hover:bg-secondary/50"
+                      >
                         <TableCell>{bin.Orchard}</TableCell>
                         <TableCell>{bin.PACKHOUSE}</TableCell>
                         <TableCell>{bin.Cultivar}</TableCell>
@@ -361,7 +431,7 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
                         colSpan={6}
                         className="h-24 text-center text-muted-foreground"
                       >
-                        No bin data available.
+                        {journeyBins.length === 0 ? "No bin data available." : "No matching bin data available."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -454,6 +524,17 @@ export default function ProducerPortalClient({ journeyBins, palletJourney }: Pro
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+      <BinDetailDrawer
+        open={selectedRow !== null}
+        onClose={() => setSelectedRow(null)}
+        row={selectedRow}
+        season={selectedSeason ?? ''}
+        onBinClick={(binNumber) => {
+          // Step 6 will implement the timeline transition
+          console.log('Bin clicked:', binNumber);
+        }}
+      />
     </Tabs>
   );
 }
