@@ -50,7 +50,7 @@ export function AppSidebar() {
           >
             <div className="h-9 w-9 overflow-hidden rounded-md bg-white/0">
               <Image
-                src='/Citrusdal_Dark.png'
+                src='/citrusdal-logo.jpg'
                 alt="Goede Hoop Citrus"
                 width={36}
                 height={36}
