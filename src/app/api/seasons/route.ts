@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { executeQuery } from '@/lib/mssql';
 
 interface SeasonRow {
-  SEASON: string;
+  Season: string;
 }
 
 export async function GET() {
@@ -14,12 +14,15 @@ export async function GET() {
     }
 
     const rows = await executeQuery<SeasonRow>(`
-      SELECT DISTINCT SEASON
-      FROM dbo.vBinRegister
-      ORDER BY SEASON DESC
+      SELECT DISTINCT U_Season AS Season
+      FROM GHC_SBO.dbo.[@BK_ORCHARDS]
+      WHERE U_Season IS NOT NULL
+        AND U_Season != ''
+        AND U_Season <= CAST(YEAR(GETDATE()) AS NVARCHAR(10))
+      ORDER BY U_Season DESC
     `);
 
-    return NextResponse.json({ data: rows.map((row) => row.SEASON) });
+    return NextResponse.json({ data: rows.map((row) => row.Season) });
   } catch (error) {
     console.error('seasons API error:', error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });

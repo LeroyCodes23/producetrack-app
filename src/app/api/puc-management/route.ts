@@ -1,30 +1,13 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { executeQuery } from '@/lib/mssql';
 
-interface SensusRow {
-  Season: string;
-  FatherCard: string;
-  CardCode: string;
-  CardName: string;
-  FarmName: string;
-  Orchard: string;
-  Commodity: string;
-  Cultivar: string;
-  Variety: string;
+interface PUCManagementRow {
   PUC: string;
-  BigStatus: string;
-  YearPlnt: number;
-  OnderStam: string;
-  Age: number;
-  TreeWidth: number;
-  RowWidth: number;
-  TreeCount: number;
-  Ha: number;
-  HaBearing: number;
-  Released: number;
-  FruitGrp: string | null;
+  Producer: string;
+  Varieties: string;
+  Location: string | null;
+  Status: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -58,10 +41,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Call the TVF with parameterized inputs
-    const rows = await executeQuery<SensusRow>(
+    const rows = await executeQuery<PUCManagementRow>(
       `
-      SELECT *
-      FROM dbo.fnSensusData(@season, @clientNumber)
+      SELECT PUC, Producer, Varieties, Location, Status
+      FROM dbo.fnPUCManagement(@season, @clientNumber)
+      ORDER BY PUC
       `,
       {
         season: requestedSeason || null,
@@ -71,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: rows });
   } catch (error) {
-    console.error('sensus-data API error:', error);
+    console.error('puc-management API error:', error);
     return NextResponse.json({ error: 'Database error' }, { status: 500 });
   }
 }

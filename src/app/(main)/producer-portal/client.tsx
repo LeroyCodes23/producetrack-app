@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { JourneyBin, PalletJourney } from "@/lib/types";
 import {
@@ -45,8 +45,65 @@ interface ProducerPortalClientProps {
   season?: string;
 }
 
+interface SensusOrchardRow {
+  Orchard?: string;
+  Released?: number;
+}
+
 export default function ProducerPortalClient({ journeyBins, palletJourney, season }: ProducerPortalClientProps) {
+  const [sensusData, setSensusData] = useState<SensusOrchardRow[]>([]);
+  const [sensusLoading, setSensusLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSensus = async () => {
+      setSensusLoading(true);
+      try {
+        const url = `/api/sensus-data${season ? `?season=${encodeURIComponent(season)}` : ''}`;
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) return;
+
+        const json = await response.json();
+        if (!cancelled) setSensusData(Array.isArray(json.data) ? json.data : []);
+      } catch (error) {
+        console.error('Failed to fetch sensus data:', error);
+      } finally {
+        if (!cancelled) setSensusLoading(false);
+      }
+    };
+
+    loadSensus();
+    return () => {
+      cancelled = true;
+    };
+  }, [season]);
+
+  const orchardStats = useMemo(() => {
+    if (!sensusData || sensusData.length === 0) {
+      return { totalOrchards: 0, releasedOrchards: 0 };
+    }
+
+    const allOrchards = new Set<string>();
+    const releasedOrchards = new Set<string>();
+
+    for (const row of sensusData) {
+      const orchard = row.Orchard;
+      if (orchard && orchard !== '') {
+        allOrchards.add(orchard);
+        if (row.Released === 1) {
+          releasedOrchards.add(orchard);
+        }
+      }
+    }
+
+    return {
+      totalOrchards: allOrchards.size,
+      releasedOrchards: releasedOrchards.size,
+    };
+  }, [sensusData]);
+
   const stats = [
+    { title: "Total PUC", value: "18" },
     { title: "Bins Harvested (To Date)", value: "1,204" },
     { title: "Pallets Packed (To Date)", value: "150" },
     { title: "Active Shipments", value: "12" },
@@ -70,8 +127,13 @@ export default function ProducerPortalClient({ journeyBins, palletJourney, seaso
         { variety: "MKN", percentage: 52 },
       ]
     },
-    { title: "Expected Returns (NBI)", value: "45" },
-    { title: "Payments Received (FFS)", value: "$18,450" },
+    {
+      title: "Orchards",
+      split: [
+        { label: "Total Orchards", value: sensusLoading ? "—" : String(orchardStats.totalOrchards) },
+        { label: "Orchards Released", value: sensusLoading ? "—" : String(orchardStats.releasedOrchards) },
+      ],
+    },
   ];
 
   // refs + state for auto-scroll behavior
@@ -276,13 +338,30 @@ export default function ProducerPortalClient({ journeyBins, palletJourney, seaso
                         className="flex-shrink-0 w-[220px] sm:w-[240px]"
                       >
                         <Card className="h-full flex flex-col">
-                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3">
-                            <CardTitle className="text-sm font-medium truncate">
-                              {stat.title}
-                            </CardTitle>
-                          </CardHeader>
+                          {!stat.split && (
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3">
+                              <CardTitle className="text-sm font-medium truncate">
+                                {stat.title}
+                              </CardTitle>
+                            </CardHeader>
+                          )}
                           <CardContent className="px-3 pb-3 flex-1 flex flex-col justify-end">
-                            {stat.breakdown ? (
+                            {stat.split ? (
+                              <div className="flex items-stretch h-full">
+                                {stat.split.map((item, i) => (
+                                  <div
+                                    key={item.label}
+                                    className={cn(
+                                      "flex-1 flex flex-col justify-center px-2",
+                                      i > 0 && "border-l border-gray-200"
+                                    )}
+                                  >
+                                    <span className="text-[11px] text-muted-foreground truncate">{item.label}</span>
+                                    <span className="text-xl font-bold">{item.value}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : stat.breakdown ? (
                                <div className="space-y-0.5 text-xs">
                                   {stat.breakdown.map((item) => (
                                     <div key={item.variety} className="flex justify-between font-mono">

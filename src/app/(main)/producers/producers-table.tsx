@@ -39,10 +39,11 @@ export default function ProducersTable() {
       try {
         const res = await fetch('/api/sensus-data');
         if (!res.ok) return;
-        const data = await res.json();
+        const json = await res.json();
+        const data = json.data ?? [];
         const map: Record<string, Set<string>> = {};
         const nameMap: Record<string, string> = {};
-        for (const row of data || []) {
+        for (const row of data) {
           const puc = (row.PUC || row.puc || row.Puc || '').toString().trim();
           if (!puc) continue;
           const keys = [row.CardName, row.FatherCard, row.producerName, row.producerCode];

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { PlusCircle, Search } from "lucide-react";
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -42,6 +43,8 @@ interface SensusData {
   // some DBs might return column names with spaces
   // use index access for those if necessary when rendering
   OnderStam?: string;
+  Released?: number;        // 0 or 1
+  FruitGrp?: string | null; // may be null
 }
 
 export default function SensusTable() {
@@ -49,19 +52,39 @@ export default function SensusTable() {
   const [sensusData, setSensusData] = useState<SensusData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [seasons, setSeasons] = useState<string[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const response = await fetch('/api/seasons');
+        if (!response.ok) return;
+        const json = await response.json();
+        const availableSeasons = Array.isArray(json.data) ? json.data : [];
+        setSeasons(availableSeasons);
+        setSelectedSeason((current) => current ?? availableSeasons[0] ?? null);
+      } catch (error) {
+        console.error('Failed to fetch seasons:', error);
+      }
+    };
+
+    fetchSeasons();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/sensus-data');
+        const url = `/api/sensus-data${selectedSeason ? `?season=${encodeURIComponent(selectedSeason)}` : ''}`;
+        const response = await fetch(url);
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: 'Failed to fetch data' }));
           throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setSensusData(data);
+        const json = await response.json();
+        setSensusData(json.data ?? []);
       } catch (error: any) {
         console.error(error);
         setError(error.message || 'An unexpected error occurred.');
@@ -71,7 +94,7 @@ export default function SensusTable() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedSeason]);
 
   const filteredData = useMemo(() => {
     if (!searchTerm) {
@@ -133,7 +156,7 @@ export default function SensusTable() {
         </div>
         <table style="border-collapse:collapse;width:100%">
           <thead>
-            <tr>${['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'].map(c=>`<th style=\"border:1px solid #ccc;padding:6px;font-size:12px\">${c}</th>`).join('')}</tr>
+            <tr>${['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing','Released','Fruit Grp'].map(c=>`<th style=\"border:1px solid #ccc;padding:6px;font-size:12px\">${c}</th>`).join('')}</tr>
           </thead>
           <tbody>
             ${dataRows.map(r=>`<tr>${[
@@ -152,7 +175,9 @@ export default function SensusTable() {
               r.RowWidth ?? '',
               r.TreeCount ?? '',
               r.Ha ?? '',
-              r.HaBearing ?? ''
+              r.HaBearing ?? '',
+              r.Released === 1 ? 'Yes' : 'No',
+              r.FruitGrp ?? ''
             ].map(cell=>`<td style=\"border:1px solid #ccc;padding:6px;font-size:12px\">${cell}</td>`).join('')}</tr>`).join('')}
           </tbody>
         </table>
@@ -246,7 +271,7 @@ export default function SensusTable() {
     const logoUrl = await resolveLogoUrl();
     const reportTitle = getReportTitle(rows, opts);
     const headers = [
-      'Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'
+      'Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing','Released','Fruit Grp'
     ];
     const escape = (v: any) => {
       if (v === null || v === undefined) return '';
@@ -286,6 +311,8 @@ export default function SensusTable() {
         escape(r.TreeCount),
         escape(r.Ha),
         escape(r.HaBearing),
+        escape(r.Released === 1 ? 'Yes' : 'No'),
+        escape(r.FruitGrp ?? ''),
       ].join(',');
       lines.push(line);
     }
@@ -308,7 +335,7 @@ export default function SensusTable() {
     // keep synchronous print using a resolved URL from the candidate paths
     const logoUrl = new URL(candidateLogoPaths[candidateLogoPaths.length - 1], window.location.origin).href;
     const reportTitle = getReportTitle(rows, opts);
-    const cols = ['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing'];
+    const cols = ['Producer Code','Producer Name','Farm Name','Comm','Cultivar','Variety','Orchard','PUC','Big Status','Plant year','Onderstam','TreeWidth','RowWidth','TreeCount','Ha','HaBearing','Released','Fruit Grp'];
     const tableRows = rows.map(r => `
       <tr>
         <td>${r.FatherCard ?? ''}</td>
@@ -327,6 +354,8 @@ export default function SensusTable() {
         <td>${r.TreeCount ?? ''}</td>
         <td>${r.Ha ?? ''}</td>
         <td>${r.HaBearing ?? ''}</td>
+        <td>${r.Released === 1 ? 'Yes' : 'No'}</td>
+        <td>${r.FruitGrp ?? ''}</td>
       </tr>`).join('\n');
     const html = `
       <html>
@@ -410,6 +439,8 @@ const renderTableContent = () => {
             <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Tree Count</TableHead>
             <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Sum of Hectares</TableHead>
             <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Bearing Ha</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Released</TableHead>
+            <TableHead className="sticky top-0 z-20 bg-background border-b border-border">Fruit Grp</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -432,11 +463,13 @@ const renderTableContent = () => {
                 <TableCell>{item.TreeCount}</TableCell>
                 <TableCell>{item.Ha}</TableCell>
                 <TableCell>{item.HaBearing}</TableCell>
+                <TableCell>{item.Released === 1 ? 'Yes' : 'No'}</TableCell>
+                <TableCell>{item.FruitGrp ?? ''}</TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={16} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={18} className="h-24 text-center text-muted-foreground">
                 No sensus data available.
               </TableCell>
             </TableRow>
@@ -451,7 +484,8 @@ const renderTableContent = () => {
     <Card>
       <CardHeader>
            <div className="flex justify-between items-center">
-                <div className="relative w-full max-w-sm">
+                <div className="flex items-center gap-2 w-full max-w-sm">
+                  <div className="relative w-full">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input 
                       type="search" 
@@ -460,6 +494,17 @@ const renderTableContent = () => {
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
+                  </div>
+                  <Select value={selectedSeason ?? ''} onValueChange={setSelectedSeason}>
+                    <SelectTrigger className="w-[120px] shrink-0">
+                      <SelectValue placeholder="Season" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {seasons.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="sm">

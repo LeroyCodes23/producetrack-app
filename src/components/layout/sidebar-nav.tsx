@@ -22,6 +22,7 @@ import {
   Settings,
   UserCircle,
   LogOut,
+  Sprout,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,24 +30,25 @@ import { useAuth } from "@/contexts/auth-context";
 
 
 const mainNav = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['admin'] },
-  { name: "Producer Portal", href: "/producer-portal", icon: Store, roles: ['admin', 'producer'] },
-  { name: "Producers", href: "/producers", icon: Users, roles: ['admin'] },
-  { name: "PUC Management", href: "/puc-management", icon: Package, roles: ['admin', 'producer'] },
-  { name: "Inspections", href: "/inspections", icon: ClipboardCheck, roles: ['admin', 'producer'] },
-  { name: "Harvests", href: "/harvests", icon: Tractor, roles: ['admin', 'producer'] },
-  { name: "Packhouse", href: "/packhouse", icon: Warehouse, roles: ['admin', 'producer'] },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['admin', 'employee'] },
+  { name: "Producer Portal", href: "/producer-portal", icon: Store, roles: ['admin', 'employee', 'producer'] },
+  { name: "Producers", href: "/producers", icon: Users, roles: ['admin', 'employee'] },
+  { name: "PUC Management", href: "/puc-management", icon: Package, roles: ['admin', 'employee', 'producer'] },
+  { name: "Inspections", href: "/inspections", icon: ClipboardCheck, roles: ['admin', 'employee', 'producer'] },
+  { name: "Harvests", href: "/harvests", icon: Tractor, roles: ['admin', 'employee', 'producer'] },
+  { name: "Packhouse", href: "/packhouse", icon: Warehouse, roles: ['admin', 'employee', 'producer'] },
+  { name: "Sensus", href: "/sensus", icon: Sprout, roles: ['producer'] },
 ];
 
 const analysisNav = [
-  { name: "Reports", href: "/reports", icon: BarChart3, roles: ['admin', 'producer'] },
-  { name: "Size Per Mass", href: "/size-per-mass", icon: Scaling, roles: ['admin', 'producer'] },
-  { name: "Demand Analysis", href: "/demand-analysis", icon: LineChart, roles: ['admin', 'producer'] },
+  { name: "Reports", href: "/reports", icon: BarChart3, roles: ['admin', 'employee', 'producer'] },
+  { name: "Size Per Mass", href: "/size-per-mass", icon: Scaling, roles: ['admin', 'employee', 'producer'] },
+  { name: "Demand Analysis", href: "/demand-analysis", icon: LineChart, roles: ['admin', 'employee', 'producer'] },
 ];
 
 const userNav = [
-  { name: "Settings", href: "/settings", icon: Settings, roles: ['admin', 'producer'] },
-  { name: "Your Profile", href: "/profile", icon: UserCircle, roles: ['admin', 'producer'] },
+  { name: "Settings", href: "/settings", icon: Settings, roles: ['admin', 'employee', 'producer'] },
+  { name: "Your Profile", href: "/profile", icon: UserCircle, roles: ['admin', 'employee', 'producer'] },
 ];
 
 export function SidebarNav() {
@@ -98,6 +100,24 @@ export function SidebarNav() {
         <>
           <SidebarGroup>
             <SidebarGroupLabel>Producer</SidebarGroupLabel>
+            <SidebarMenu>
+              {renderNavItems(mainNav)}
+            </SidebarMenu>
+          </SidebarGroup>
+          <SidebarSeparator />
+          <SidebarGroup>
+            <SidebarGroupLabel>Analysis</SidebarGroupLabel>
+            <SidebarMenu>
+              {renderNavItems(analysisNav)}
+            </SidebarMenu>
+          </SidebarGroup>
+        </>
+      )}
+
+      {userRole === 'employee' && (
+        <>
+          <SidebarGroup>
+            <SidebarGroupLabel>Management</SidebarGroupLabel>
             <SidebarMenu>
               {renderNavItems(mainNav)}
             </SidebarMenu>

@@ -144,6 +144,18 @@ export const authConfig = {
         return Response.redirect(new URL('/producer-portal', nextUrl));
       }
 
+      const isOnProducers = pathname.startsWith('/producers');
+
+      if (isOnProducers && userType === 'Producer') {
+        return Response.redirect(new URL('/producer-portal', nextUrl));
+      }
+
+      const isOnSensus = pathname.startsWith('/sensus');
+
+      if (isOnSensus && userType !== 'Producer') {
+        return Response.redirect(new URL('/producers', nextUrl));
+      }
+
       return true;
     },
   },
